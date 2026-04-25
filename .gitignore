@@ -1,0 +1,5 @@
+.venv
+data
+sanitized_data
+data_backup.zip
+__pycache__
