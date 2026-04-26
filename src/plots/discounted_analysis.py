@@ -4,7 +4,7 @@ import matplotlib.dates as mdates
 from pathlib import Path
 
 
-def plot_discounted_analysis(measured, reference, title, start_date=None, end_date=None):
+def get_and_plot_discounted_analysis(measured, reference, title, start_date=None, end_date=None):
     measured_df = pd.read_csv(Path('sanitized_data') / f'{measured}.csv', parse_dates=['date'])
     reference_df = pd.read_csv(Path('sanitized_data') / f'{reference}.csv', parse_dates=['date'])
 
@@ -55,3 +55,21 @@ def plot_discounted_analysis(measured, reference, title, start_date=None, end_da
     ax.legend()
     plt.tight_layout()
     plt.show()
+    
+    years = (aligned['date'].iloc[-1] - aligned['date'].iloc[0]).days / 365.25
+    
+    results = []
+    for series_name, return_series in [
+        (f'{measured} return', measured_return),
+        (f'{reference} return', reference_return),
+        (f'{measured} discounted by {reference}', discounted_return)
+    ]:
+        total_return = return_series.iloc[-1]
+        annualized_return = ((1 + total_return / 100) ** (1 / years) - 1) * 100
+        results.append({
+            'series': series_name,
+            'total_return': total_return,
+            'annualized_return': annualized_return
+        })
+    
+    return pd.DataFrame(results)
