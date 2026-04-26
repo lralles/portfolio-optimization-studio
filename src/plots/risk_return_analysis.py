@@ -67,6 +67,8 @@ def plot_risk_return_analysis(indexes, title, start_date=None, end_date=None):
     ax.set_title(title)
     ax.set_xlabel('Risk (Annualized Volatility %)')
     ax.set_ylabel('Return (Annualized %)')
+    ax.set_xlim(left=0)
+    ax.set_ylim(bottom=0)
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()

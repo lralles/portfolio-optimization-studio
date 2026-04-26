@@ -3,20 +3,25 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from pathlib import Path
 
-def get_and_plot_comparative_analysis(indexes, title):
+def get_and_plot_comparative_analysis(indexes, title, start_date=None, end_date=None):
     dfs = {}
     for name in indexes:
         df = pd.read_csv(Path('sanitized_data') / f'{name}.csv', parse_dates=['date'])
         dfs[name] = df.sort_values('date').reset_index(drop=True)
 
-    start_date = max(df['date'].iloc[0] for df in dfs.values())
-    end_date = min(df['date'].iloc[-1] for df in dfs.values())
+    common_start = max(df['date'].iloc[0] for df in dfs.values())
+    common_end = min(df['date'].iloc[-1] for df in dfs.values())
+
+    if start_date is not None:
+        common_start = max(common_start, pd.to_datetime(start_date))
+    if end_date is not None:
+        common_end = min(common_end, pd.to_datetime(end_date))
 
     fig, ax = plt.subplots(figsize=(14, 5))
     
     results = []
     for name, df in dfs.items():
-        mask = (df['date'] >= start_date) & (df['date'] <= end_date)
+        mask = (df['date'] >= common_start) & (df['date'] <= common_end)
         filtered = df[mask].reset_index(drop=True)
         initial_price = filtered['price'].iloc[0]
         rentability = ((filtered['price'] / initial_price) - 1) * 100
