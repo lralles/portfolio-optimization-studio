@@ -2,15 +2,15 @@ from typing import Optional
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from pathlib import Path
+from src.consumers import IndexData
 
 
-def get_and_plot_discounted_analysis(measured: str, reference: str, title: str, start_date: Optional[str] = None, end_date: Optional[str] = None) -> pd.DataFrame:
-    measured_df = pd.read_csv(Path('sanitized_data') / f'{measured}.csv', parse_dates=['date'])
-    reference_df = pd.read_csv(Path('sanitized_data') / f'{reference}.csv', parse_dates=['date'])
-
-    measured_df = measured_df.sort_values('date').reset_index(drop=True)
-    reference_df = reference_df.sort_values('date').reset_index(drop=True)
+def get_and_plot_discounted_analysis(measured: IndexData, reference: IndexData, title: str, start_date: Optional[str] = None, end_date: Optional[str] = None) -> pd.DataFrame:
+    measured_df = measured['data'].sort_values('date').reset_index(drop=True)
+    reference_df = reference['data'].sort_values('date').reset_index(drop=True)
+    
+    measured_name = measured['name']
+    reference_name = reference['name']
 
     common_start = max(measured_df['date'].iloc[0], reference_df['date'].iloc[0])
     common_end = min(measured_df['date'].iloc[-1], reference_df['date'].iloc[-1])
@@ -42,9 +42,9 @@ def get_and_plot_discounted_analysis(measured: str, reference: str, title: str, 
     discounted_return = (((aligned['price_measured'] / aligned['price_measured'].iloc[0]) / (aligned['price_reference'] / aligned['price_reference'].iloc[0])) - 1) * 100
 
     fig, ax = plt.subplots(figsize=(14, 5))
-    ax.plot(aligned['date'], measured_return, linewidth=1, label=f'{measured} return')
-    ax.plot(aligned['date'], reference_return, linewidth=1, label=f'{reference} return')
-    ax.plot(aligned['date'], discounted_return, linewidth=1.5, label=f'{measured} discounted by {reference}')
+    ax.plot(aligned['date'], measured_return, linewidth=1, label=f'{measured_name} return')
+    ax.plot(aligned['date'], reference_return, linewidth=1, label=f'{reference_name} return')
+    ax.plot(aligned['date'], discounted_return, linewidth=1.5, label=f'{measured_name} discounted by {reference_name}')
 
     ax.set_title(title)
     ax.set_xlabel('Date')
@@ -61,9 +61,9 @@ def get_and_plot_discounted_analysis(measured: str, reference: str, title: str, 
     
     results = []
     for series_name, return_series in [
-        (f'{measured} return', measured_return),
-        (f'{reference} return', reference_return),
-        (f'{measured} discounted by {reference}', discounted_return)
+        (f'{measured_name} return', measured_return),
+        (f'{reference_name} return', reference_return),
+        (f'{measured_name} discounted by {reference_name}', discounted_return)
     ]:
         total_return = return_series.iloc[-1]
         annualized_return = ((1 + total_return / 100) ** (1 / years) - 1) * 100

@@ -1,13 +1,13 @@
 from typing import List, Optional
 import pandas as pd
 import matplotlib.pyplot as plt
-from pathlib import Path
+from src.consumers import IndexData
 
-def plot_risk_return_analysis(indexes: List[str], title: str, start_date: Optional[str] = None, end_date: Optional[str] = None) -> pd.DataFrame:
+def plot_risk_return_analysis(indexes: List[IndexData], title: str, start_date: Optional[str] = None, end_date: Optional[str] = None) -> pd.DataFrame:
     dfs = {}
-    for name in indexes:
-        df = pd.read_csv(Path('sanitized_data') / f'{name}.csv', parse_dates=['date'])
-        dfs[name] = df.sort_values('date').reset_index(drop=True)
+    for index_data in indexes:
+        df = index_data['data'].sort_values('date').reset_index(drop=True)
+        dfs[index_data['name']] = df
 
     if start_date is None:
         start_date = max(df['date'].iloc[0] for df in dfs.values())

@@ -2,13 +2,13 @@ from typing import List, Optional
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from pathlib import Path
+from src.consumers import IndexData
 
-def get_and_plot_comparative_analysis(indexes: List[str], title: str, start_date: Optional[str] = None, end_date: Optional[str] = None) -> pd.DataFrame:
+def get_and_plot_comparative_analysis(indexes: List[IndexData], title: str, start_date: Optional[str] = None, end_date: Optional[str] = None) -> pd.DataFrame:
     dfs = {}
-    for name in indexes:
-        df = pd.read_csv(Path('sanitized_data') / f'{name}.csv', parse_dates=['date'])
-        dfs[name] = df.sort_values('date').reset_index(drop=True)
+    for index_data in indexes:
+        df = index_data['data'].sort_values('date').reset_index(drop=True)
+        dfs[index_data['name']] = df
 
     common_start = max(df['date'].iloc[0] for df in dfs.values())
     common_end = min(df['date'].iloc[-1] for df in dfs.values())
