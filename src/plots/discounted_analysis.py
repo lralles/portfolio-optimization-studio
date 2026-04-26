@@ -1,10 +1,11 @@
+from typing import Optional
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from pathlib import Path
 
 
-def get_and_plot_discounted_analysis(measured, reference, title, start_date=None, end_date=None):
+def get_and_plot_discounted_analysis(measured: str, reference: str, title: str, start_date: Optional[str] = None, end_date: Optional[str] = None) -> pd.DataFrame:
     measured_df = pd.read_csv(Path('sanitized_data') / f'{measured}.csv', parse_dates=['date'])
     reference_df = pd.read_csv(Path('sanitized_data') / f'{reference}.csv', parse_dates=['date'])
 

@@ -7,7 +7,7 @@ OUT = Path('sanitized_data/imas.csv')
 
 SOURCE_FILE = DATA_DIR / 'IMAS-HISTORICO.xls'
 
-def ingest_imas():
+def ingest_imas() -> pd.DataFrame:
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', UserWarning)
         df = pd.read_excel(SOURCE_FILE, usecols=['Data de Referência', 'Número Índice'])

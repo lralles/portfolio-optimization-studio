@@ -6,7 +6,7 @@ OUT = Path('sanitized_data/bovespa_dividend.csv')
 
 SOURCE_FILE = DATA_DIR / 'Bovespa Dividend Historical Data day.csv'
 
-def ingest_bovespa_dividend():
+def ingest_bovespa_dividend() -> pd.DataFrame:
     df = pd.read_csv(SOURCE_FILE, usecols=['Date', 'Price'])
     df['date'] = pd.to_datetime(df['Date'])
     df['price'] = df['Price'].astype(str).str.replace(',', '').astype(float)

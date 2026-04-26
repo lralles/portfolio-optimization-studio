@@ -7,7 +7,7 @@ OUT = Path('sanitized_data/imab5mais.csv')
 
 SOURCE_FILE = DATA_DIR / 'IMAB5MAIS-HISTORICO.xls'
 
-def ingest_imab5mais():
+def ingest_imab5mais() -> pd.DataFrame:
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', UserWarning)
         df = pd.read_excel(SOURCE_FILE, usecols=['Data de Referência', 'Número Índice'])

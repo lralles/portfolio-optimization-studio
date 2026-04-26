@@ -6,7 +6,7 @@ OUT = Path('sanitized_data/imab.csv')
 
 SOURCE_FILE = DATA_DIR / 'IMAB-HISTORICO.xls'
 
-def ingest_imab():
+def ingest_imab() -> pd.DataFrame:
     df = pd.read_excel(SOURCE_FILE, engine='xlrd', usecols=['Data de Referência', 'Número Índice'])
     df['date'] = pd.to_datetime(df['Data de Referência'])
     df['price'] = df['Número Índice']

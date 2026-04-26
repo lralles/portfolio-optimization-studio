@@ -7,7 +7,7 @@ OUT = Path('sanitized_data/sp500brl.csv')
 SP500_FILE = DATA_DIR / 'S&P 500 Historical Data day.csv'
 USDBRL_FILE = DATA_DIR / 'USD_BRL Historical Data day.csv'
 
-def ingest_sp500brl():
+def ingest_sp500brl() -> pd.DataFrame:
     sp500_df = pd.read_csv(SP500_FILE, usecols=['Date', 'Price'])
     usdbrl_df = pd.read_csv(USDBRL_FILE, usecols=['Date', 'Price'])
     

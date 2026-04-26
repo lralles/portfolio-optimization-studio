@@ -1,8 +1,9 @@
+from typing import Optional
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-def plot_drawdown(df, title, start_date=None, end_date=None):
+def plot_drawdown(df: pd.DataFrame, title: str, start_date: Optional[str] = None, end_date: Optional[str] = None) -> None:
     filtered_df = df.copy()
     
     if start_date is not None:

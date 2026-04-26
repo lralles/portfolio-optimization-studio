@@ -6,7 +6,7 @@ OUT = Path('sanitized_data/ifix.csv')
 
 SOURCE_FILE = DATA_DIR / 'BM&FBOVESPA Real Estate IFIX Historical Data day.csv'
 
-def ingest_ifix():
+def ingest_ifix() -> pd.DataFrame:
     df = pd.read_csv(SOURCE_FILE, usecols=['Date', 'Price'])
     df['date'] = pd.to_datetime(df['Date'])
     df['price'] = df['Price'].astype(str).str.replace(',', '').astype(float)

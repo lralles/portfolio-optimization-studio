@@ -6,7 +6,7 @@ OUT = Path('sanitized_data/usdbrl.csv')
 
 SOURCE_FILE = DATA_DIR / 'USD_BRL Historical Data day.csv'
 
-def ingest_usdbrl():
+def ingest_usdbrl() -> pd.DataFrame:
     df = pd.read_csv(SOURCE_FILE, usecols=['Date', 'Price'])
     df['date'] = pd.to_datetime(df['Date'])
     df['price'] = df['Price'].astype(float)

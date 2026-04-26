@@ -7,7 +7,7 @@ OUT = Path('sanitized_data/irfm1.csv')
 
 SOURCE_FILE = DATA_DIR / 'IRFM1-HISTORICO.xls'
 
-def ingest_irfm1():
+def ingest_irfm1() -> pd.DataFrame:
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', UserWarning)
         df = pd.read_excel(SOURCE_FILE, usecols=['Data de Referência', 'Número Índice'])

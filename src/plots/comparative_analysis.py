@@ -1,9 +1,10 @@
+from typing import List, Optional
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from pathlib import Path
 
-def get_and_plot_comparative_analysis(indexes, title, start_date=None, end_date=None):
+def get_and_plot_comparative_analysis(indexes: List[str], title: str, start_date: Optional[str] = None, end_date: Optional[str] = None) -> pd.DataFrame:
     dfs = {}
     for name in indexes:
         df = pd.read_csv(Path('sanitized_data') / f'{name}.csv', parse_dates=['date'])

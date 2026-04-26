@@ -6,11 +6,10 @@ OUT = Path('sanitized_data/bovespa.csv')
 
 SOURCE_FILES = [
     DATA_DIR / 'Bovespa Historical Data day.csv',
-    #DATA_DIR / 'Bovespa Historical Data day 2.csv',
     DATA_DIR / 'Bovespa Historical Data day 3.csv',
 ]
 
-def ingest_bovespa():
+def ingest_bovespa() -> pd.DataFrame:
     frames = []
     for f in SOURCE_FILES:
         df = pd.read_csv(f, usecols=['Date', 'Price'])

@@ -12,11 +12,11 @@ MONTHS_PT = {
     'setembro': 9, 'outubro': 10, 'novembro': 11, 'dezembro': 12
 }
 
-def _parse_pt_date(s):
+def _parse_pt_date(s: str) -> pd.Timestamp:
     month_name, year = s.strip().split()
     return pd.Timestamp(year=int(year), month=MONTHS_PT[month_name], day=1) + pd.offsets.MonthEnd(0)
 
-def ingest_ipca():
+def ingest_ipca() -> pd.DataFrame:
     df = pd.read_csv(SOURCE_FILE, header=None, names=[0, 1, 2])
     df = df[df[0] == 'Brasil'].copy()
     df['date'] = df[1].apply(_parse_pt_date)
