@@ -1,14 +1,10 @@
-from typing import Optional
+from typing import Optional, Dict
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-from src.consumers import IndexData
 
-
-def get_and_plot_discounted_analysis(measured: IndexData, reference: IndexData, title: str, start_date: Optional[str] = None, end_date: Optional[str] = None) -> pd.DataFrame:
+def compute_discounted_analysis(measured: dict, reference: dict, start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict:
     measured_df = measured['data'].sort_values('date').reset_index(drop=True)
     reference_df = reference['data'].sort_values('date').reset_index(drop=True)
-    
+
     measured_name = measured['name']
     reference_name = reference['name']
 
@@ -41,24 +37,8 @@ def get_and_plot_discounted_analysis(measured: IndexData, reference: IndexData, 
     reference_return = ((aligned['price_reference'] / aligned['price_reference'].iloc[0]) - 1) * 100
     discounted_return = (((aligned['price_measured'] / aligned['price_measured'].iloc[0]) / (aligned['price_reference'] / aligned['price_reference'].iloc[0])) - 1) * 100
 
-    fig, ax = plt.subplots(figsize=(14, 5))
-    ax.plot(aligned['date'], measured_return, linewidth=1, label=f'{measured_name} return')
-    ax.plot(aligned['date'], reference_return, linewidth=1, label=f'{reference_name} return')
-    ax.plot(aligned['date'], discounted_return, linewidth=1.5, label=f'{measured_name} discounted by {reference_name}')
-
-    ax.set_title(title)
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Return (%)')
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
-    ax.xaxis.set_major_locator(mdates.YearLocator())
-    fig.autofmt_xdate()
-    ax.grid(True, alpha=0.3)
-    ax.legend()
-    plt.tight_layout()
-    plt.show()
-    
     years = (aligned['date'].iloc[-1] - aligned['date'].iloc[0]).days / 365.25
-    
+
     results = []
     for series_name, return_series in [
         (f'{measured_name} return', measured_return),
@@ -72,5 +52,15 @@ def get_and_plot_discounted_analysis(measured: IndexData, reference: IndexData, 
             'total_return': total_return,
             'annualized_return': annualized_return
         })
-    
-    return pd.DataFrame(results)
+
+    return {
+        'aligned': aligned,
+        'measured_return': measured_return,
+        'reference_return': reference_return,
+        'discounted_return': discounted_return,
+        'results_df': pd.DataFrame(results),
+        'measured_name': measured_name,
+        'reference_name': reference_name,
+        'start_date': common_start,
+        'end_date': common_end
+    }
