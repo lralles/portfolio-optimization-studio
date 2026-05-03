@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
-from typing import Dict
+from typing import Dict, Optional
 
 
-def plot_efficient_frontier(results: Dict, title: str) -> None:
+def plot_efficient_frontier(results: Dict, title: str, risk_return_results: Optional[Dict] = None) -> None:
     frontier = results['frontier']
     assets = results['assets']
     min_var = results['min_variance_portfolio']
@@ -32,6 +32,12 @@ def plot_efficient_frontier(results: Dict, title: str) -> None:
     slope = (tangency['annualized_return'] - rf) / tangency['volatility']
     cml_ret = [rf, rf + slope * vol_range_end]
     ax.plot(cml_vol, cml_ret, linestyle='--', color='orange', linewidth=1.2, alpha=0.7, label='Capital Market Line')
+
+    if risk_return_results is not None:
+        rr_df = risk_return_results['results_df']
+        ax.scatter(rr_df['annualized_volatility'], rr_df['annualized_return'], s=100, color='purple', alpha=0.8, zorder=4, marker='D', label='Sample Portfolios')
+        for _, row in rr_df.iterrows():
+            ax.annotate(row['index'], (row['annualized_volatility'], row['annualized_return']), xytext=(5, 5), textcoords='offset points', fontsize=9, color='purple')
 
     ax.set_title(title)
     ax.set_xlabel('Risk (Annualized Volatility %)')
