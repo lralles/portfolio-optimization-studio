@@ -38,6 +38,69 @@ def plot_efficient_frontier(results: Dict, title: str) -> None:
     ax.set_ylabel('Return (Annualized %)')
     ax.set_xlim(left=0)
     ax.grid(True, alpha=0.3)
-    ax.legend(loc='lower right')
+    ax.legend(loc='upper left')
     plt.tight_layout()
     plt.show()
+
+
+def print_results(results: Dict) -> None:
+    print("=" * 80)
+    print("EFFICIENT FRONTIER ANALYSIS RESULTS")
+    print("=" * 80)
+    
+    print(f"\nAnalysis Period:")
+    print(f"  Requested:  {results['start_date']} to {results['end_date']}")
+    print(f"  Effective:  {results['effective_start_date']} to {results['effective_end_date']}")
+    print(f"  Common dates: {results['num_common_dates']}")
+    print(f"  Risk-free rate: {results['risk_free_rate']:.2f}%")
+    
+    print("\n" + "=" * 80)
+    print("INDIVIDUAL ASSETS")
+    print("=" * 80)
+    assets = results['assets']
+    for _, asset in assets.iterrows():
+        print(f"\n{asset['name']}:")
+        print(f"  Return:     {asset['annualized_return']:8.2f}%")
+        print(f"  Volatility: {asset['volatility']:8.2f}%")
+        print(f"  Variance:   {asset['variance']:8.2f}%²")
+    
+    print("\n" + "=" * 80)
+    print("OPTIMAL PORTFOLIOS")
+    print("=" * 80)
+    
+    print("\nMINIMUM VARIANCE PORTFOLIO")
+    print("-" * 40)
+    min_var = results['min_variance_portfolio']
+    print(f"  Return:     {min_var['annualized_return']:8.2f}%")
+    print(f"  Volatility: {min_var['volatility']:8.2f}%")
+    print(f"  Variance:   {min_var['variance']:8.2f}%²")
+    print(f"  Weights:")
+    for asset, weight in sorted(min_var['weights'].items(), key=lambda x: x[1], reverse=True):
+        if weight > 0.01:
+            print(f"    {asset:20s} {weight:6.2f}%")
+    
+    print("\nTANGENCY PORTFOLIO (Maximum Sharpe Ratio)")
+    print("-" * 40)
+    tangency = results['tangency_portfolio']
+    sharpe = (tangency['annualized_return'] - results['risk_free_rate']) / tangency['volatility']
+    print(f"  Return:     {tangency['annualized_return']:8.2f}%")
+    print(f"  Volatility: {tangency['volatility']:8.2f}%")
+    print(f"  Variance:   {tangency['variance']:8.2f}%²")
+    print(f"  Sharpe:     {sharpe:8.4f}")
+    print(f"  Weights:")
+    for asset, weight in sorted(tangency['weights'].items(), key=lambda x: x[1], reverse=True):
+        if weight > 0.01:
+            print(f"    {asset:20s} {weight:6.2f}%")
+    
+    print("\nMAXIMUM RETURN PORTFOLIO")
+    print("-" * 40)
+    max_ret = results['max_return_portfolio']
+    print(f"  Return:     {max_ret['annualized_return']:8.2f}%")
+    print(f"  Volatility: {max_ret['volatility']:8.2f}%")
+    print(f"  Variance:   {max_ret['variance']:8.2f}%²")
+    print(f"  Weights:")
+    for asset, weight in sorted(max_ret['weights'].items(), key=lambda x: x[1], reverse=True):
+        if weight > 0.01:
+            print(f"    {asset:20s} {weight:6.2f}%")
+    
+    print("\n" + "=" * 80)

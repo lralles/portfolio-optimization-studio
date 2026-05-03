@@ -26,15 +26,30 @@ def compute_efficient_frontier(
     else:
         end_date = pd.to_datetime(end_date)
 
-    returns_dict = {}
+    # Find common dates across all indexes
+    date_sets = []
     for name, df in dfs.items():
         mask = (df['date'] >= start_date) & (df['date'] <= end_date)
-        filtered = df[mask].reset_index(drop=True)
+        filtered_dates = set(df[mask]['date'])
+        date_sets.append(filtered_dates)
+    
+    # Get intersection of all date sets
+    common_dates = set.intersection(*date_sets) if date_sets else set()
+    common_dates_sorted = sorted(common_dates)
+    
+    # Store the effective dates that were actually used
+    effective_start_date = common_dates_sorted[0] if common_dates_sorted else start_date
+    effective_end_date = common_dates_sorted[-1] if common_dates_sorted else end_date
+    
+    # Filter all indexes to only common dates and calculate returns
+    returns_dict = {}
+    for name, df in dfs.items():
+        filtered = df[df['date'].isin(common_dates)].sort_values('date').reset_index(drop=True)
         daily_returns = filtered['price'].pct_change().dropna()
         daily_returns.index = filtered['date'].iloc[1:].values
         returns_dict[name] = daily_returns
 
-    returns_df = pd.DataFrame(returns_dict).dropna()
+    returns_df = pd.DataFrame(returns_dict)
     names = list(returns_df.columns)
     n = len(names)
 
@@ -102,10 +117,12 @@ def compute_efficient_frontier(
     for i, name in enumerate(names):
         w = np.zeros(n)
         w[i] = 1.0
+        vol = portfolio_volatility(w)
         assets_list.append({
             'name': name,
             'annualized_return': mu[i] * 100,
-            'volatility': portfolio_volatility(w) * 100,
+            'volatility': vol * 100,
+            'variance': (vol ** 2) * 10000,
         })
     assets_df = pd.DataFrame(assets_list)
 
@@ -122,18 +139,24 @@ def compute_efficient_frontier(
             'weights': weights_dict(min_var_weights),
             'annualized_return': min_var_return * 100,
             'volatility': min_var_vol * 100,
+            'variance': (min_var_vol ** 2) * 10000,
         },
         'max_return_portfolio': {
             'weights': weights_dict(max_ret_weights),
             'annualized_return': max_ret_return * 100,
             'volatility': max_ret_vol * 100,
+            'variance': (max_ret_vol ** 2) * 10000,
         },
         'tangency_portfolio': {
             'weights': weights_dict(tangency_weights),
             'annualized_return': tangency_return * 100,
             'volatility': tangency_vol * 100,
+            'variance': (tangency_vol ** 2) * 10000,
         },
         'risk_free_rate': risk_free_rate * 100,
         'start_date': start_date,
         'end_date': end_date,
+        'effective_start_date': effective_start_date,
+        'effective_end_date': effective_end_date,
+        'num_common_dates': len(common_dates_sorted),
     }
