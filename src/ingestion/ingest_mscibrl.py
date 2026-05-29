@@ -2,11 +2,10 @@ import pandas as pd
 from pathlib import Path
 
 DATA_DIR = Path('data')
-OUT = Path('sanitized_data/sp500brl.csv')
+OUT = Path('sanitized_data/mscibrl.csv')
 
-SP500_FILES = [
-    DATA_DIR / 'S&P 500 Historical Data day.csv',
-    DATA_DIR / 'S&P 500 Historical Data day 2.csv'
+MSCI_FILES = [
+    DATA_DIR / 'MSCI All-Country World Equity Index Historical Data.csv',
 ]
 
 USDBRL_FILES = [
@@ -14,12 +13,12 @@ USDBRL_FILES = [
      DATA_DIR / 'USD_BRL Historical Data day 2.csv'
 ]
 
-def ingest_sp500brl() -> pd.DataFrame:
-    sp500_frames = []
-    for f in SP500_FILES:
+def ingest_mscibrl() -> pd.DataFrame:
+    msci_frames = []
+    for f in MSCI_FILES:
         df = pd.read_csv(f, usecols=['Date', 'Price'])
-        sp500_frames.append(df)
-    sp500_df = pd.concat(sp500_frames)
+        msci_frames.append(df)
+    msci_df = pd.concat(msci_frames)
 
     usdbrl_frames = []
     for f in USDBRL_FILES:
@@ -27,16 +26,16 @@ def ingest_sp500brl() -> pd.DataFrame:
         usdbrl_frames.append(df)
     usdbrl_df = pd.concat(usdbrl_frames)
 
-    sp500_df['date'] = pd.to_datetime(sp500_df['Date'])
+    msci_df['date'] = pd.to_datetime(msci_df['Date'])
     usdbrl_df['date'] = pd.to_datetime(usdbrl_df['Date'])
 
-    sp500_df['price'] = sp500_df['Price'].astype(str).str.replace(',', '').astype(float)
+    msci_df['price'] = msci_df['Price'].astype(str).str.replace(',', '').astype(float)
     usdbrl_df['usdbrl_price'] = usdbrl_df['Price'].astype(float)
 
-    sp500_df = sp500_df[['date', 'price']].drop_duplicates(subset='date')
+    msci_df = msci_df[['date', 'price']].drop_duplicates(subset='date')
     usdbrl_df = usdbrl_df[['date', 'usdbrl_price']].drop_duplicates(subset='date')
 
-    merged_df = pd.merge(sp500_df, usdbrl_df, on='date', how='inner')
+    merged_df = pd.merge(msci_df, usdbrl_df, on='date', how='inner')
 
     merged_df['price'] = merged_df['price'] * merged_df['usdbrl_price']
 
