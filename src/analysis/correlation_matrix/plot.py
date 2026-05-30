@@ -1,13 +1,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Dict
 
-def plot_correlation_matrix(results: Dict) -> None:
-    index_names = results.get('index_names', [])
-    correlation_matrix = results['correlation_matrix']
-    start_date = results.get('start_date')
-    end_date = results.get('end_date')
-    interval = results.get('interval', 'daily')
+from .type import CorrelationMatrixResult
+
+
+def plot_correlation_matrix(results: CorrelationMatrixResult) -> None:
+    index_names = results.index_names
+    correlation_matrix = results.correlation_matrix
+    start_date = results.start_date
+    end_date = results.end_date
+    interval = results.interval
 
     fig, ax = plt.subplots(figsize=(10, 8))
     im = ax.imshow(correlation_matrix, cmap='coolwarm', vmin=-1, vmax=1, aspect='auto')

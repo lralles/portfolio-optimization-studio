@@ -1,10 +1,12 @@
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from typing import Dict
 
-def plot_drawdown_from_results(results: Dict, title: str) -> None:
-    df = results['filtered_df']
-    drawdown_df = results['drawdown']
+from .type import DrawdownResult
+
+
+def plot_drawdown_from_results(results: DrawdownResult, title: str) -> None:
+    df = results.filtered_df
+    drawdown_df = results.drawdown
 
     fig, ax = plt.subplots(figsize=(14, 5))
     ax.plot(drawdown_df['date'], drawdown_df['drawdown'], linewidth=1)

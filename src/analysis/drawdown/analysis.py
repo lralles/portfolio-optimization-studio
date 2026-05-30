@@ -1,7 +1,10 @@
-from typing import Optional, Dict
+from typing import Optional
 import pandas as pd
 
-def compute_drawdown(df: pd.DataFrame, start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict:
+from .type import DrawdownResult
+
+
+def compute_drawdown(df: pd.DataFrame, start_date: Optional[str] = None, end_date: Optional[str] = None) -> DrawdownResult:
     filtered_df = df.copy()
 
     if start_date is not None:
@@ -14,9 +17,9 @@ def compute_drawdown(df: pd.DataFrame, start_date: Optional[str] = None, end_dat
     cumulative_max = filtered_df['price'].cummax()
     drawdown = ((filtered_df['price'] - cumulative_max) / cumulative_max) * 100
 
-    return {
-        'filtered_df': filtered_df,
-        'drawdown': pd.DataFrame({'date': filtered_df['date'], 'drawdown': drawdown}),
-        'start_date': start_date,
-        'end_date': end_date
-    }
+    return DrawdownResult(
+        filtered_df=filtered_df,
+        drawdown=pd.DataFrame({'date': filtered_df['date'], 'drawdown': drawdown}),
+        start_date=start_date,
+        end_date=end_date,
+    )

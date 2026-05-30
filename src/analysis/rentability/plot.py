@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from typing import Dict
 
-def plot_rentability(results: Dict, title: str) -> None:
-    rentability_df = results['rentability']
+from .type import RentabilityResult
+
+
+def plot_rentability(results: RentabilityResult, title: str) -> None:
+    rentability_df = results.rentability
 
     fig, ax = plt.subplots(figsize=(14, 5))
     ax.plot(rentability_df['date'], rentability_df['rentability'], linewidth=1)

@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
-from typing import Dict
+
+from .type import SlidingWindowResult
 
 
-def plot_sliding_window(results: Dict, title: str) -> None:
-    data = results['results']
-    window_size = results['window_size']
+def plot_sliding_window(results: SlidingWindowResult, title: str) -> None:
+    data = results.results
+    window_size = results.window_size
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
 

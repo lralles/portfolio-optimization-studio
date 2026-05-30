@@ -1,7 +1,10 @@
-from typing import List, Optional, Dict
+from typing import List, Optional
 import pandas as pd
 
-def compute_risk_return_analysis(indexes: List[dict], start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict:
+from .type import RiskReturnAnalysisResult
+
+
+def compute_risk_return_analysis(indexes: List[dict], start_date: Optional[str] = None, end_date: Optional[str] = None) -> RiskReturnAnalysisResult:
     dfs = {}
     for index_data in indexes:
         df = index_data['data'].sort_values('date').reset_index(drop=True)
@@ -18,7 +21,11 @@ def compute_risk_return_analysis(indexes: List[dict], start_date: Optional[str] 
         end_date = pd.to_datetime(end_date)
 
     if start_date > end_date:
-        return {'results_df': pd.DataFrame(columns=['index', 'annualized_return', 'annualized_volatility', 'total_return']), 'start_date': start_date, 'end_date': end_date}
+        return RiskReturnAnalysisResult(
+            results_df=pd.DataFrame(columns=['index', 'annualized_return', 'annualized_volatility', 'total_return']),
+            start_date=start_date,
+            end_date=end_date,
+        )
 
     results = []
     for name, df in dfs.items():
@@ -47,8 +54,8 @@ def compute_risk_return_analysis(indexes: List[dict], start_date: Optional[str] 
 
     results_df = pd.DataFrame(results)
 
-    return {
-        'results_df': results_df,
-        'start_date': start_date,
-        'end_date': end_date
-    }
+    return RiskReturnAnalysisResult(
+        results_df=results_df,
+        start_date=start_date,
+        end_date=end_date,
+    )

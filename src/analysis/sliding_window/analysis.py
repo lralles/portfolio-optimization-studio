@@ -1,6 +1,8 @@
-from typing import List, Optional, Dict
+from typing import List, Optional
 import pandas as pd
 import numpy as np
+
+from .type import SlidingWindowResult
 
 
 def compute_sliding_window(
@@ -8,7 +10,7 @@ def compute_sliding_window(
     window_size: int,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-) -> Dict:
+) -> SlidingWindowResult:
     dfs = {}
     for index_data in indexes:
         df = index_data['data'].sort_values('date').reset_index(drop=True)
@@ -55,9 +57,9 @@ def compute_sliding_window(
             'annualized_volatility': annualized_volatilities,
         })
 
-    return {
-        'results': results,
-        'window_size': window_size,
-        'start_date': start_date,
-        'end_date': end_date,
-    }
+    return SlidingWindowResult(
+        results=results,
+        window_size=window_size,
+        start_date=start_date,
+        end_date=end_date,
+    )

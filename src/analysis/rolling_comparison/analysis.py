@@ -1,6 +1,8 @@
-from typing import Optional, Dict
+from typing import Optional
 import pandas as pd
 import numpy as np
+
+from .type import RollingComparisonResult
 
 
 def compute_rolling_comparison(
@@ -9,7 +11,7 @@ def compute_rolling_comparison(
     window_years: float = 3.0,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-) -> Dict:
+) -> RollingComparisonResult:
     window_days = int(round(window_years * 365.25))
 
     df_a = index_a['data'].sort_values('date').reset_index(drop=True)
@@ -55,18 +57,18 @@ def compute_rolling_comparison(
     win_pct_a = wins_a / total_windows * 100 if total_windows > 0 else 0.0
     win_pct_b = wins_b / total_windows * 100 if total_windows > 0 else 0.0
 
-    return {
-        'difference': merged[['date', 'difference']],
-        'series_a': merged[['date', 'annualized_return_a']].rename(columns={'annualized_return_a': 'annualized_return'}),
-        'series_b': merged[['date', 'annualized_return_b']].rename(columns={'annualized_return_b': 'annualized_return'}),
-        'name_a': index_a['name'],
-        'name_b': index_b['name'],
-        'window_years': window_years,
-        'start_date': common_start,
-        'end_date': common_end,
-        'total_windows': total_windows,
-        'wins_a': wins_a,
-        'wins_b': wins_b,
-        'win_pct_a': win_pct_a,
-        'win_pct_b': win_pct_b,
-    }
+    return RollingComparisonResult(
+        difference=merged[['date', 'difference']],
+        series_a=merged[['date', 'annualized_return_a']].rename(columns={'annualized_return_a': 'annualized_return'}),
+        series_b=merged[['date', 'annualized_return_b']].rename(columns={'annualized_return_b': 'annualized_return'}),
+        name_a=index_a['name'],
+        name_b=index_b['name'],
+        window_years=window_years,
+        start_date=common_start,
+        end_date=common_end,
+        total_windows=total_windows,
+        wins_a=wins_a,
+        wins_b=wins_b,
+        win_pct_a=win_pct_a,
+        win_pct_b=win_pct_b,
+    )

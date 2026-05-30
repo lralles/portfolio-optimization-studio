@@ -1,7 +1,10 @@
-from typing import Optional, Dict
+from typing import Optional
 import pandas as pd
 
-def compute_discounted_analysis(measured: dict, reference: dict, start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict:
+from .type import DiscountedAnalysisResult
+
+
+def compute_discounted_analysis(measured: dict, reference: dict, start_date: Optional[str] = None, end_date: Optional[str] = None) -> DiscountedAnalysisResult:
     measured_df = measured['data'].sort_values('date').reset_index(drop=True)
     reference_df = reference['data'].sort_values('date').reset_index(drop=True)
 
@@ -53,14 +56,14 @@ def compute_discounted_analysis(measured: dict, reference: dict, start_date: Opt
             'annualized_return': annualized_return
         })
 
-    return {
-        'aligned': aligned,
-        'measured_return': measured_return,
-        'reference_return': reference_return,
-        'discounted_return': discounted_return,
-        'results_df': pd.DataFrame(results),
-        'measured_name': measured_name,
-        'reference_name': reference_name,
-        'start_date': common_start,
-        'end_date': common_end
-    }
+    return DiscountedAnalysisResult(
+        aligned=aligned,
+        measured_return=measured_return,
+        reference_return=reference_return,
+        discounted_return=discounted_return,
+        results_df=pd.DataFrame(results),
+        measured_name=measured_name,
+        reference_name=reference_name,
+        start_date=common_start,
+        end_date=common_end,
+    )

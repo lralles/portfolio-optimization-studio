@@ -1,15 +1,17 @@
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from typing import Dict
 
-def plot_discounted_analysis(results: Dict, title: str) -> None:
-    aligned = results['aligned']
-    measured_name = results['measured_name']
-    reference_name = results['reference_name']
+from .type import DiscountedAnalysisResult
 
-    measured_return = results['measured_return']
-    reference_return = results['reference_return']
-    discounted_return = results['discounted_return']
+
+def plot_discounted_analysis(results: DiscountedAnalysisResult, title: str) -> None:
+    aligned = results.aligned
+    measured_name = results.measured_name
+    reference_name = results.reference_name
+
+    measured_return = results.measured_return
+    reference_return = results.reference_return
+    discounted_return = results.discounted_return
 
     fig, ax = plt.subplots(figsize=(14, 5))
     ax.plot(aligned['date'], measured_return, linewidth=1, label=f'{measured_name} return')

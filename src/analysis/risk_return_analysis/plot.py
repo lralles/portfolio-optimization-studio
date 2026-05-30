@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
-from typing import Dict
 
-def plot_risk_return(results: Dict, title: str) -> None:
-    results_df = results['results_df']
+from .type import RiskReturnAnalysisResult
+
+
+def plot_risk_return(results: RiskReturnAnalysisResult, title: str) -> None:
+    results_df = results.results_df
 
     fig, ax = plt.subplots(figsize=(12, 8))
     ax.scatter(results_df['annualized_volatility'], results_df['annualized_return'], s=100, alpha=0.6)

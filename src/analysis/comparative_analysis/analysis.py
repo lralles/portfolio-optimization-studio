@@ -1,7 +1,10 @@
-from typing import List, Optional, Dict
+from typing import List, Optional
 import pandas as pd
 
-def compute_comparative_analysis(indexes: List[dict], start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict:
+from .type import ComparativeAnalysisResult
+
+
+def compute_comparative_analysis(indexes: List[dict], start_date: Optional[str] = None, end_date: Optional[str] = None) -> ComparativeAnalysisResult:
     dfs = {}
     for index_data in indexes:
         df = index_data['data'].sort_values('date').reset_index(drop=True)
@@ -34,9 +37,9 @@ def compute_comparative_analysis(indexes: List[dict], start_date: Optional[str] 
             'annualized_return': annualized_return
         })
 
-    return {
-        'results_df': pd.DataFrame(results),
-        'rentability_timeseries': rentability_timeseries,
-        'start_date': common_start,
-        'end_date': common_end
-    }
+    return ComparativeAnalysisResult(
+        results_df=pd.DataFrame(results),
+        rentability_timeseries=rentability_timeseries,
+        start_date=common_start,
+        end_date=common_end,
+    )

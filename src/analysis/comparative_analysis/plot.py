@@ -1,11 +1,13 @@
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from typing import Dict
 
-def plot_comparative_analysis(results: Dict, title: str) -> None:
+from .type import ComparativeAnalysisResult
+
+
+def plot_comparative_analysis(results: ComparativeAnalysisResult, title: str) -> None:
     fig, ax = plt.subplots(figsize=(14, 5))
 
-    for name, df in results['rentability_timeseries'].items():
+    for name, df in results.rentability_timeseries.items():
         ax.plot(df['date'], df['rentability'], linewidth=1, label=name)
 
     ax.set_title(title)

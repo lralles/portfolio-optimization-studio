@@ -1,7 +1,9 @@
-from typing import List, Optional, Dict
+from typing import List, Optional
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
+
+from .type import EfficientFrontierResult, PortfolioResult
 
 
 def compute_efficient_frontier(
@@ -10,7 +12,7 @@ def compute_efficient_frontier(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     n_points: int = 200,
-) -> Dict:
+) -> EfficientFrontierResult:
     dfs = {}
     for index_data in indexes:
         df = index_data['data'].sort_values('date').reset_index(drop=True)
@@ -129,34 +131,34 @@ def compute_efficient_frontier(
     def weights_dict(w):
         return {name: round(float(w[i]) * 100, 2) for i, name in enumerate(names)}
 
-    return {
-        'frontier': frontier_df.assign(
+    return EfficientFrontierResult(
+        frontier=frontier_df.assign(
             volatility=lambda d: d['volatility'] * 100,
             annualized_return=lambda d: d['annualized_return'] * 100,
         ),
-        'assets': assets_df,
-        'min_variance_portfolio': {
-            'weights': weights_dict(min_var_weights),
-            'annualized_return': min_var_return * 100,
-            'volatility': min_var_vol * 100,
-            'variance': (min_var_vol ** 2) * 10000,
-        },
-        'max_return_portfolio': {
-            'weights': weights_dict(max_ret_weights),
-            'annualized_return': max_ret_return * 100,
-            'volatility': max_ret_vol * 100,
-            'variance': (max_ret_vol ** 2) * 10000,
-        },
-        'tangency_portfolio': {
-            'weights': weights_dict(tangency_weights),
-            'annualized_return': tangency_return * 100,
-            'volatility': tangency_vol * 100,
-            'variance': (tangency_vol ** 2) * 10000,
-        },
-        'risk_free_rate': risk_free_rate * 100,
-        'start_date': start_date,
-        'end_date': end_date,
-        'effective_start_date': effective_start_date,
-        'effective_end_date': effective_end_date,
-        'num_common_dates': len(common_dates_sorted),
-    }
+        assets=assets_df,
+        min_variance_portfolio=PortfolioResult(
+            weights=weights_dict(min_var_weights),
+            annualized_return=min_var_return * 100,
+            volatility=min_var_vol * 100,
+            variance=(min_var_vol ** 2) * 10000,
+        ),
+        max_return_portfolio=PortfolioResult(
+            weights=weights_dict(max_ret_weights),
+            annualized_return=max_ret_return * 100,
+            volatility=max_ret_vol * 100,
+            variance=(max_ret_vol ** 2) * 10000,
+        ),
+        tangency_portfolio=PortfolioResult(
+            weights=weights_dict(tangency_weights),
+            annualized_return=tangency_return * 100,
+            volatility=tangency_vol * 100,
+            variance=(tangency_vol ** 2) * 10000,
+        ),
+        risk_free_rate=risk_free_rate * 100,
+        start_date=start_date,
+        end_date=end_date,
+        effective_start_date=effective_start_date,
+        effective_end_date=effective_end_date,
+        num_common_dates=len(common_dates_sorted),
+    )

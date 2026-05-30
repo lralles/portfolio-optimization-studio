@@ -1,8 +1,10 @@
-from typing import List, Optional, Dict
+from typing import List, Optional
 import pandas as pd
 from ..common_calculations.variations import get_day_variation, get_month_variation, get_year_variation
+from .type import CorrelationMatrixResult
 
-def compute_correlation_matrix(index_data_list: List[pd.DataFrame], index_names: List[str], start_date: Optional[str] = None, end_date: Optional[str] = None, interval: str = 'daily') -> Dict:
+
+def compute_correlation_matrix(index_data_list: List[pd.DataFrame], index_names: List[str], start_date: Optional[str] = None, end_date: Optional[str] = None, interval: str = 'daily') -> CorrelationMatrixResult:
     if interval not in ['daily', 'month', 'year']:
         raise ValueError("interval must be 'daily', 'month', or 'year'")
 
@@ -25,11 +27,11 @@ def compute_correlation_matrix(index_data_list: List[pd.DataFrame], index_names:
     combined_df = combined_df.dropna()
     correlation_matrix = combined_df.corr()
 
-    return {
-        'combined_df': combined_df,
-        'correlation_matrix': correlation_matrix,
-        'start_date': start_date,
-        'end_date': end_date,
-        'interval': interval,
-        'index_names': index_names
-    }
+    return CorrelationMatrixResult(
+        combined_df=combined_df,
+        correlation_matrix=correlation_matrix,
+        start_date=start_date,
+        end_date=end_date,
+        interval=interval,
+        index_names=index_names,
+    )

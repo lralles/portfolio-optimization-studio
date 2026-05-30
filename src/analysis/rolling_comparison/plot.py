@@ -1,12 +1,13 @@
 import matplotlib.pyplot as plt
-from typing import Dict
+
+from .type import RollingComparisonResult
 
 
-def plot_rolling_comparison(results: Dict, title: str) -> None:
-    diff = results['difference']
-    name_a = results['name_a']
-    name_b = results['name_b']
-    window_years = results['window_years']
+def plot_rolling_comparison(results: RollingComparisonResult, title: str) -> None:
+    diff = results.difference
+    name_a = results.name_a
+    name_b = results.name_b
+    window_years = results.window_years
 
     fig, ax = plt.subplots(figsize=(14, 7))
 
@@ -28,23 +29,23 @@ def plot_rolling_comparison(results: Dict, title: str) -> None:
     plt.show()
 
 
-def print_results(results: Dict) -> None:
-    name_a = results['name_a']
-    name_b = results['name_b']
-    window_years = results['window_years']
-    total = results['total_windows']
-    wins_a = results['wins_a']
-    wins_b = results['wins_b']
-    win_pct_a = results['win_pct_a']
-    win_pct_b = results['win_pct_b']
-    diff = results['difference']
+def print_results(results: RollingComparisonResult) -> None:
+    name_a = results.name_a
+    name_b = results.name_b
+    window_years = results.window_years
+    total = results.total_windows
+    wins_a = results.wins_a
+    wins_b = results.wins_b
+    win_pct_a = results.win_pct_a
+    win_pct_b = results.win_pct_b
+    diff = results.difference
 
     print("=" * 60)
     print("ROLLING COMPARISON RESULTS")
     print("=" * 60)
     print(f"\n  {name_a}  vs  {name_b}")
     print(f"  Window:        {window_years:.4g} year(s)")
-    print(f"  Period:        {results['start_date'].date()} to {results['end_date'].date()}")
+    print(f"  Period:        {results.start_date.date()} to {results.end_date.date()}")
     print(f"  Total windows: {total}")
 
     print(f"\n  {'':20} {'Windows won':>12} {'Win rate':>10} {'Avg margin':>12}")
