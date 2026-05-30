@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/Users/leonardoalles/dev/portfolio-optimization-studio/.venv/bin/python *)"
+    ]
+  }
+}
