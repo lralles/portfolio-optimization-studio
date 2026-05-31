@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, List
 import pandas as pd
 
 
@@ -18,6 +18,7 @@ class EfficientFrontierResult:
     min_variance_portfolio: PortfolioResult
     max_return_portfolio: PortfolioResult
     tangency_portfolio: PortfolioResult
+    selected_portfolios: List[PortfolioResult]
     risk_free_rate: float
     start_date: pd.Timestamp
     end_date: pd.Timestamp

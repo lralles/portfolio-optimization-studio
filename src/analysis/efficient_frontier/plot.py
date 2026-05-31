@@ -30,6 +30,10 @@ def plot_efficient_frontier(results: EfficientFrontierResult, title: str, risk_r
     ax.scatter(tangency.volatility, tangency.annualized_return, s=150, color='orange', zorder=5, marker='*', label=f'Tangency (rf={rf:.1f}%)')
     ax.annotate(f'Tangency', (tangency.volatility, tangency.annualized_return), xytext=(8, 5), textcoords='offset points', fontsize=9, color='orange', fontweight='bold')
 
+    selected_vols = [p.volatility for p in results.selected_portfolios]
+    selected_rets = [p.annualized_return for p in results.selected_portfolios]
+    ax.scatter(selected_vols, selected_rets, s=100, color='blue', zorder=4, marker='o', alpha=0.6, label='Selected Portfolios')
+
     vol_range_end = max(frontier['volatility'].max(), assets['volatility'].max()) * 1.1
     cml_vol = [0, vol_range_end]
     slope = (tangency.annualized_return - rf) / tangency.volatility
@@ -111,5 +115,20 @@ def print_results(results: EfficientFrontierResult) -> None:
     for asset, weight in sorted(max_ret.weights.items(), key=lambda x: x[1], reverse=True):
         if weight > 0.01:
             print(f"    {asset:20s} {weight:6.2f}%")
+    
+    print("\n" + "=" * 80)
+    print("SELECTED EFFICIENT FRONTIER PORTFOLIOS (10 EVENLY SPACED)")
+    print("=" * 80)
+    
+    for i, portfolio in enumerate(results.selected_portfolios, 1):
+        print(f"\nPORTFOLIO {i}")
+        print("-" * 40)
+        print(f"  Return:     {portfolio.annualized_return:8.2f}%")
+        print(f"  Volatility: {portfolio.volatility:8.2f}%")
+        print(f"  Variance:   {portfolio.variance:8.2f}%²")
+        print(f"  Weights:")
+        for asset, weight in sorted(portfolio.weights.items(), key=lambda x: x[1], reverse=True):
+            if weight > 0.01:
+                print(f"    {asset:20s} {weight:6.2f}%")
     
     print("\n" + "=" * 80)

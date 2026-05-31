@@ -131,6 +131,19 @@ def compute_efficient_frontier(
     def weights_dict(w):
         return {name: round(float(w[i]) * 100, 2) for i, name in enumerate(names)}
 
+    selected_indices = np.linspace(0, len(frontier_weights) - 1, 10, dtype=int)
+    selected_portfolios = []
+    for idx in selected_indices:
+        w = frontier_weights[idx]
+        vol = frontier_vols[idx]
+        ret = frontier_rets[idx]
+        selected_portfolios.append(PortfolioResult(
+            weights=weights_dict(w),
+            annualized_return=ret * 100,
+            volatility=vol * 100,
+            variance=(vol ** 2) * 10000,
+        ))
+
     return EfficientFrontierResult(
         frontier=frontier_df.assign(
             volatility=lambda d: d['volatility'] * 100,
@@ -155,6 +168,7 @@ def compute_efficient_frontier(
             volatility=tangency_vol * 100,
             variance=(tangency_vol ** 2) * 10000,
         ),
+        selected_portfolios=selected_portfolios,
         risk_free_rate=risk_free_rate * 100,
         start_date=start_date,
         end_date=end_date,
