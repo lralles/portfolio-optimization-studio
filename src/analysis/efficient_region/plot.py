@@ -81,7 +81,7 @@ def print_results(results: EfficientRegionResult) -> None:
     print("\n" + "=" * 80)
     print("PORTFOLIO LOSS SCORE")
     print("=" * 80)
-    print(f"  Average Distance to Frontier: {results.portfolio_loss_score:.4f}")
+    print(f"  Average Error Score (normalized): {results.portfolio_loss_score:.4f}")
     
     print("\n" + "=" * 80)
     print("WINDOW ANALYSIS")
@@ -95,6 +95,7 @@ def print_results(results: EfficientRegionResult) -> None:
         print(f"    Return:     {window_result.test_portfolio_point.annualized_return:8.2f}%")
         print(f"    Volatility: {window_result.test_portfolio_point.volatility:8.2f}%")
         print(f"    Variance:   {window_result.test_portfolio_point.variance:8.2f}%²")
-        print(f"  Distance to Frontier: {window_result.distance_to_frontier:.4f}")
+        print(f"  Distance to Frontier:        {window_result.distance_to_frontier:.4f}")
+        print(f"  Portfolio Error Score:        {window_result.portfolio_error_score:.4f}")
     
     print("\n" + "=" * 80)

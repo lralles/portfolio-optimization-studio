@@ -147,6 +147,9 @@ def compute_efficient_region(
             frontier_df.loc[closest_idx, 'annualized_return']
         )
 
+        closest_magnitude = np.sqrt(closest_point[0] ** 2 + closest_point[1] ** 2)
+        portfolio_error_score = min_distance / closest_magnitude if closest_magnitude > 0 else 0.0
+
         window_frontiers.append(WindowFrontierResult(
             window_index=window_idx,
             start_date=window_start_date,
@@ -155,6 +158,7 @@ def compute_efficient_region(
             test_portfolio_point=test_portfolio_point,
             distance_to_frontier=min_distance,
             closest_frontier_point=closest_point,
+            portfolio_error_score=portfolio_error_score,
         ))
 
     assets_list = []
@@ -164,7 +168,7 @@ def compute_efficient_region(
         })
     assets_df = pd.DataFrame(assets_list)
 
-    portfolio_loss_score = np.mean([wf.distance_to_frontier for wf in window_frontiers])
+    portfolio_loss_score = np.mean([wf.portfolio_error_score for wf in window_frontiers])
 
     return EfficientRegionResult(
         window_frontiers=window_frontiers,

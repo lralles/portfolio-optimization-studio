@@ -20,6 +20,7 @@ class WindowFrontierResult:
     test_portfolio_point: PortfolioResult
     distance_to_frontier: float
     closest_frontier_point: tuple
+    portfolio_error_score: float
 
 
 @dataclass
