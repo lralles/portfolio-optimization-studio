@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
-from .type import EfficientRegionResult, WindowFrontierResult, PortfolioResult
+from .type import EfficientRegionResult, WindowFrontierResult, PortfolioResult, IndexStats
 
 
 def compute_efficient_region(
@@ -150,6 +150,15 @@ def compute_efficient_region(
         closest_magnitude = np.sqrt(closest_point[0] ** 2 + closest_point[1] ** 2)
         portfolio_error_score = min_distance / closest_magnitude if closest_magnitude > 0 else 0.0
 
+        index_stats = {}
+        for i, name in enumerate(names):
+            single_weight = np.zeros(n)
+            single_weight[i] = 1.0
+            index_stats[name] = IndexStats(
+                annualized_return=portfolio_return(single_weight) * 100,
+                volatility=portfolio_volatility(single_weight) * 100,
+            )
+
         window_frontiers.append(WindowFrontierResult(
             window_index=window_idx,
             start_date=window_start_date,
@@ -159,6 +168,7 @@ def compute_efficient_region(
             distance_to_frontier=min_distance,
             closest_frontier_point=closest_point,
             portfolio_error_score=portfolio_error_score,
+            index_stats=index_stats,
         ))
 
     assets_list = []

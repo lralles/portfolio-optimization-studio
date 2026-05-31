@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import Dict, List
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional
 import pandas as pd
 
 
@@ -12,6 +12,12 @@ class PortfolioResult:
 
 
 @dataclass
+class IndexStats:
+    annualized_return: float
+    volatility: float
+
+
+@dataclass
 class WindowFrontierResult:
     window_index: int
     start_date: pd.Timestamp
@@ -21,6 +27,7 @@ class WindowFrontierResult:
     distance_to_frontier: float
     closest_frontier_point: tuple
     portfolio_error_score: float
+    index_stats: Optional[Dict[str, "IndexStats"]] = field(default=None)
 
 
 @dataclass

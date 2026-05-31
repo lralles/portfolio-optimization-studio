@@ -97,5 +97,9 @@ def print_results(results: EfficientRegionResult) -> None:
         print(f"    Variance:   {window_result.test_portfolio_point.variance:8.2f}%²")
         print(f"  Distance to Frontier:        {window_result.distance_to_frontier:.4f}")
         print(f"  Portfolio Error Score:        {window_result.portfolio_error_score:.4f}")
+        if window_result.index_stats:
+            print(f"  Index Performance:")
+            for name, stats in window_result.index_stats.items():
+                print(f"    {name:20s}  Return: {stats.annualized_return:8.2f}%  Volatility: {stats.volatility:8.2f}%")
     
     print("\n" + "=" * 80)
