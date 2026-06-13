@@ -137,14 +137,30 @@ def compute_efficient_return_region(
             variance=(test_vol ** 2) * 10000,
         )
 
-        frontier_sorted = frontier_df.sort_values('volatility')
-        vols = frontier_sorted['volatility'].values
-        rets = frontier_sorted['annualized_return'].values
+        min_var_vol = portfolio_volatility(min_var_weights)
+        max_ret_vol = portfolio_volatility(max_ret_weights)
 
-        clamped_vol = np.clip(test_vol * 100, vols[0], vols[-1])
-        frontier_return_at_vol = float(np.interp(clamped_vol, vols, rets))
+        if test_vol <= min_var_vol:
+            frontier_return_at_vol = min_var_return * 100
+        else:
+            target_vol = min(test_vol, max_ret_vol)
+            cons_vol = [
+                {'type': 'eq', 'fun': lambda w: np.sum(w) - 1},
+                {'type': 'eq', 'fun': lambda w, v=target_vol: portfolio_volatility(w) - v},
+            ]
+            res_vol = minimize(
+                lambda w: -portfolio_return(w), w0,
+                method='SLSQP', bounds=bounds, constraints=cons_vol
+            )
+            if res_vol.success:
+                frontier_return_at_vol = float(portfolio_return(res_vol.x) * 100)
+            else:
+                frontier_sorted = frontier_df.sort_values('volatility')
+                vols_fb = frontier_sorted['volatility'].values
+                rets_fb = frontier_sorted['annualized_return'].values
+                frontier_return_at_vol = float(np.interp(test_vol * 100, vols_fb, rets_fb))
 
-        return_range = float(rets[-1] - rets[0])
+        return_range = float((max_ret_return - min_var_return) * 100)
         return_gap = frontier_return_at_vol - test_ret * 100
         return_gap = max(0.0, return_gap)
 

@@ -136,16 +136,28 @@ def compute_efficient_region(
             variance=(test_vol ** 2) * 10000,
         )
 
-        distances = np.sqrt(
-            (frontier_df['volatility'] - test_vol * 100) ** 2 + 
-            (frontier_df['annualized_return'] - test_return * 100) ** 2
-        )
-        min_distance = distances.min()
-        closest_idx = distances.idxmin()
-        closest_point = (
-            frontier_df.loc[closest_idx, 'volatility'],
-            frontier_df.loc[closest_idx, 'annualized_return']
-        )
+        frontier_pts = frontier_df[['volatility', 'annualized_return']].values
+        p = np.array([test_vol * 100, test_return * 100])
+
+        min_distance = np.inf
+        closest_pt = frontier_pts[0].copy()
+
+        for i in range(len(frontier_pts) - 1):
+            a = frontier_pts[i]
+            b = frontier_pts[i + 1]
+            ab = b - a
+            ab_sq = float(np.dot(ab, ab))
+            if ab_sq == 0:
+                proj = a.copy()
+            else:
+                t = float(np.clip(np.dot(p - a, ab) / ab_sq, 0.0, 1.0))
+                proj = a + t * ab
+            dist = float(np.linalg.norm(p - proj))
+            if dist < min_distance:
+                min_distance = dist
+                closest_pt = proj
+
+        closest_point = (float(closest_pt[0]), float(closest_pt[1]))
 
         closest_magnitude = np.sqrt(closest_point[0] ** 2 + closest_point[1] ** 2)
         portfolio_error_score = min_distance / closest_magnitude if closest_magnitude > 0 else 0.0
