@@ -31,12 +31,18 @@ def compute_risk_return_sliding_window(
         end_date = pd.to_datetime(end_date)
 
     results = {}
+    metrics = {}
     for name, df in dfs.items():
         mask = (df['date'] >= start_date) & (df['date'] <= end_date)
         filtered = df[mask].reset_index(drop=True)
 
         if len(filtered) < 2:
             results[name] = pd.DataFrame(columns=['date', 'annualized_return', 'annualized_volatility'])
+            metrics[name] = {
+                'avg_jump_risk': 0.0,
+                'avg_jump_return': 0.0,
+                'avg_jump_distance': 0.0,
+            }
             continue
 
         dates = []
@@ -92,8 +98,37 @@ def compute_risk_return_sliding_window(
             'annualized_volatility': annualized_volatilities,
         })
 
+        avg_jump_risk = 0.0
+        avg_jump_return = 0.0
+        avg_jump_distance = 0.0
+        
+        if len(annualized_returns) >= 2:
+            risk_jumps = []
+            return_jumps = []
+            distance_jumps = []
+            
+            for i in range(1, len(annualized_returns)):
+                risk_jump = abs(annualized_volatilities[i] - annualized_volatilities[i-1])
+                return_jump = abs(annualized_returns[i] - annualized_returns[i-1])
+                distance_jump = np.sqrt(risk_jump**2 + return_jump**2)
+                
+                risk_jumps.append(risk_jump)
+                return_jumps.append(return_jump)
+                distance_jumps.append(distance_jump)
+            
+            avg_jump_risk = np.mean(risk_jumps)
+            avg_jump_return = np.mean(return_jumps)
+            avg_jump_distance = np.mean(distance_jumps)
+        
+        metrics[name] = {
+            'avg_jump_risk': avg_jump_risk,
+            'avg_jump_return': avg_jump_return,
+            'avg_jump_distance': avg_jump_distance,
+        }
+
     return RiskReturnSlidingWindowResult(
         results=results,
+        metrics=metrics,
         window_years=window_years,
         start_date=start_date,
         end_date=end_date,

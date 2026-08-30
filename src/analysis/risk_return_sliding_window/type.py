@@ -6,6 +6,7 @@ import pandas as pd
 @dataclass
 class RiskReturnSlidingWindowResult:
     results: Dict[str, pd.DataFrame]
+    metrics: Dict[str, Dict[str, float]]
     window_years: float
     start_date: pd.Timestamp
     end_date: pd.Timestamp
@@ -26,7 +27,13 @@ def print_results(result: RiskReturnSlidingWindowResult) -> None:
             continue
         first = df.iloc[0]
         last = df.iloc[-1]
+        metrics = result.metrics.get(name, {})
         print(
             f"{name}: {len(df)} windows | start (risk={first['annualized_volatility']:.2f}%, return={first['annualized_return']:.2f}%) "
             f"-> end (risk={last['annualized_volatility']:.2f}%, return={last['annualized_return']:.2f}%)"
+        )
+        print(
+            f"  Average jumps: risk={metrics.get('avg_jump_risk', 0):.2f}%, "
+            f"return={metrics.get('avg_jump_return', 0):.2f}%, "
+            f"distance={metrics.get('avg_jump_distance', 0):.2f}%"
         )
