@@ -1,0 +1,2 @@
+#!/bin/sh
+repo_root=$(git rev-parse --show-toplevel); git diff --cached --name-only --diff-filter=ACMR -- '*.ipynb' | xargs -r -I{} sh -c "$repo_root/.venv/bin/jupyter nbconvert --to notebook --clear-output --inplace \"\$1\" && git add \"\$1\"" _ "{}"

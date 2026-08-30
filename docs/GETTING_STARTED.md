@@ -6,6 +6,16 @@
 - Virtual environment (.venv) already set up
 - All dependencies installed from `requirements.txt`
 
+## Git Hook Setup
+
+To keep notebook commits clean, enable the repo hook path once per clone:
+
+```bash
+git config --local core.hooksPath .githooks
+```
+
+After that, the pre-commit hook will run `.venv/bin/jupyter nbconvert --to notebook --clear-output --inplace` on staged `.ipynb` files and restage them before each commit.
+
 ## Quick Start
 
 ### Step 1: Activate Virtual Environment
