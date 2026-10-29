@@ -8,6 +8,8 @@ Portfolio Optimization Studio is a Python project for analyzing historical finan
 - `sanitized_data/` stores cleaned CSV outputs created by ingestion.
 - `src/ingestion/` contains functions that read, sanitize, sort, and export each dataset.
 - `src/analysis/` contains the analysis and plotting logic used by the notebooks.
+- `src/application/` orchestrates consumer-backed analysis use cases for clients.
+- `src/webapi/` exposes those use cases as a JSON HTTP API.
 - `notebooks/` contains the Jupyter notebooks for ingestion and analysis.
 - `docs/` contains project documentation and usage notes.
 
@@ -85,6 +87,18 @@ jupyter notebook notebooks/rentability.ipynb
 
 Additional analysis notebooks are available in `notebooks/` for tasks such as correlation analysis, drawdown, efficient frontier exploration, portfolio optimization, rolling comparison, and risk-return analysis.
 
+### 3. Start the API
+
+From the project root, after installing the requirements:
+
+```bash
+uvicorn src.webapi.main:app --reload
+```
+
+The API is documented at `http://127.0.0.1:8000/docs`. Use `GET /api/v1/indexes` to list available consumer indexes. The first API version accepts index names and analysis parameters; custom weighted portfolios are intentionally not part of this surface yet.
+
+To use the sample requests, open the `.bruno/` directory as a collection in Bruno, select the `local` environment, and run the requests against the running API. The collection includes one request for every endpoint.
+
 ## Project Workflow
 
 ```text
@@ -92,7 +106,8 @@ Raw data in data/
   -> ingestion functions in src/ingestion/
   -> clean CSV files in sanitized_data/
   -> analysis logic in src/analysis/
-  -> visual exploration in notebooks/
+  -> application use cases in src/application/
+  -> notebooks/ or web clients through src/webapi/
 ```
 
 ## Documentation
