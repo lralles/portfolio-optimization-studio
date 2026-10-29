@@ -1,0 +1,22 @@
+meta {
+  name: Inflation bonds risk-return
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{baseUrl}}/api/v1/analyses/inflation-bonds-risk-return
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "random_portfolios": 1,
+    "seed": 42
+  }
+}

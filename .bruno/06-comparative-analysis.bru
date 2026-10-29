@@ -1,0 +1,23 @@
+meta {
+  name: Comparative analysis
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/analyses/comparative
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "indexes": ["bovespa", "ifix", "sp500brl"],
+    "start_date": "2015-01-01",
+    "end_date": "2020-12-31"
+  }
+}

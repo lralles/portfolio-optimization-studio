@@ -1,0 +1,25 @@
+meta {
+  name: Efficient frontier
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/api/v1/analyses/efficient-frontier
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "indexes": ["bovespa", "imab", "irfm", "sp500brl"],
+    "risk_free_rate": 0.125,
+    "n_points": 25,
+    "start_date": "2015-01-01",
+    "end_date": "2020-12-31"
+  }
+}

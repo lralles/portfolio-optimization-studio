@@ -3,3 +3,6 @@ matplotlib
 numpy
 xlrd
 openpyxl
+scipy
+fastapi
+uvicorn
