@@ -1,0 +1,11 @@
+meta {
+  name: Get rentability
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/indexes/{{indexName}}/rentability?start_date=2020-01-01&end_date=2020-12-31
+  body: none
+  auth: none
+}

@@ -1,0 +1,11 @@
+meta {
+  name: Get drawdown
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/indexes/{{indexName}}/drawdown?start_date=2020-01-01&end_date=2020-12-31
+  body: none
+  auth: none
+}

@@ -1,0 +1,26 @@
+meta {
+  name: Risk-return sliding window
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/api/v1/analyses/risk-return-sliding-window
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "indexes": ["bovespa", "imab", "irfm"],
+    "window_years": 3,
+    "window_count": 5,
+    "independent_windows": false,
+    "start_date": "2015-01-01",
+    "end_date": "2020-12-31"
+  }
+}

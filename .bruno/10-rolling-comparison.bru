@@ -1,0 +1,25 @@
+meta {
+  name: Rolling comparison
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/v1/analyses/rolling-comparison
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "index_a": "bovespa",
+    "index_b": "sp500brl",
+    "window_years": 3,
+    "start_date": "2015-01-01",
+    "end_date": "2020-12-31"
+  }
+}

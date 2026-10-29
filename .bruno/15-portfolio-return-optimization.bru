@@ -1,0 +1,29 @@
+meta {
+  name: Portfolio return optimization
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{baseUrl}}/api/v1/analyses/portfolio-return-optimization
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "indexes": ["bovespa", "imab"],
+    "window_size": 20,
+    "sample_number": 1,
+    "independent_windows": false,
+    "n_points": 5,
+    "step_size": 50,
+    "top_n": 3,
+    "start_date": "2020-01-01",
+    "end_date": "2020-12-31"
+  }
+}

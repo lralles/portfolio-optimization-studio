@@ -1,0 +1,24 @@
+meta {
+  name: Correlation analysis
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/v1/analyses/correlation
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "indexes": ["bovespa", "ifix", "sp500brl", "imab"],
+    "interval": "month",
+    "start_date": "2015-01-01",
+    "end_date": "2020-12-31"
+  }
+}

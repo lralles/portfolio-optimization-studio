@@ -1,0 +1,11 @@
+meta {
+  name: Get prices
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/indexes/{{indexName}}/prices?start_date=2020-01-01&end_date=2020-12-31
+  body: none
+  auth: none
+}

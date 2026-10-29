@@ -1,0 +1,24 @@
+meta {
+  name: Discounted analysis
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/analyses/discounted
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "measured_index": "ifix",
+    "reference_index": "ipca",
+    "start_date": "2015-01-01",
+    "end_date": "2020-12-31"
+  }
+}
