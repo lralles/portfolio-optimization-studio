@@ -80,4 +80,14 @@ export const api = {
       end_date: filters.endDate || null,
     })
   },
+
+  testPortfolio(components, rebalancing, correlationInterval, filters) {
+    return post('/api/v1/analyses/portfolio-testing', {
+      components,
+      rebalancing,
+      correlation_interval: correlationInterval,
+      start_date: filters.startDate || null,
+      end_date: filters.endDate || null,
+    })
+  },
 }

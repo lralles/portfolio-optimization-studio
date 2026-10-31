@@ -1,0 +1,29 @@
+meta {
+  name: Portfolio testing
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{baseUrl}}/api/v1/analyses/portfolio-testing
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "components": [
+      {"index": "bovespa", "weight": 50},
+      {"index": "imab", "weight": 30},
+      {"index": "sp500brl", "weight": 20}
+    ],
+    "rebalancing": "monthly",
+    "correlation_interval": "month",
+    "start_date": "2018-01-01",
+    "end_date": "2020-12-31"
+  }
+}

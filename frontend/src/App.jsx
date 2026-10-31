@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', icon: '◒' },
   { id: 'compare', label: 'Compare indexes', icon: '◫' },
   { id: 'correlation', label: 'Correlation', icon: '⌘' },
+  { id: 'portfolio', label: 'Portfolio testing', icon: '◈' },
 ]
 
 const DEFAULT_FILTERS = {
@@ -473,6 +474,7 @@ function App() {
               error={error.correlation}
             />
           )}
+          {activeView === 'portfolio' && <PortfolioTestingView indexes={indexes} filters={filters} />}
         </div>
       </main>
     </div>
@@ -581,6 +583,153 @@ function CorrelationView({ indexes, selected, setSelected, correlation, interval
         </div>
       )}
       {!loading && !correlation && !error && <EmptyState title="Select at least two indexes" detail="Choose the series you want to analyze above." />}
+    </>
+  )
+}
+
+function PortfolioTestingView({ indexes, filters }) {
+  const [components, setComponents] = useState([])
+  const [rebalancing, setRebalancing] = useState('buy_and_hold')
+  const [correlationInterval, setCorrelationInterval] = useState('month')
+  const [result, setResult] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!indexes.length || components.length) return
+    const defaults = [
+      ['bovespa', 50],
+      ['imab', 30],
+      ['sp500brl', 20],
+    ].filter(([name]) => indexes.includes(name))
+    const initial = defaults.length >= 2 ? defaults : indexes.slice(0, 3).map((name, index) => [name, index === 0 ? 60 : index === 1 ? 40 : 0])
+    setComponents(initial.map(([index, weight], id) => ({ id, index, weight })))
+  }, [indexes, components.length])
+
+  const totalWeight = components.reduce((total, component) => total + Number(component.weight || 0), 0)
+  const isValid = components.length > 0 && components.every((component) => component.index) && Math.abs(totalWeight - 100) < 0.01
+  const selectedIndexes = components.map((component) => component.index)
+
+  const updateComponent = (id, key, value) => {
+    setComponents((current) => current.map((component) => component.id === id ? { ...component, [key]: key === 'weight' ? value : value } : component))
+  }
+
+  const addComponent = () => {
+    const nextIndex = indexes.find((name) => !selectedIndexes.includes(name))
+    if (!nextIndex) return
+    setComponents((current) => [...current, { id: Date.now(), index: nextIndex, weight: 0 }])
+  }
+
+  const removeComponent = (id) => {
+    if (components.length <= 1) return
+    setComponents((current) => current.filter((component) => component.id !== id))
+    setResult(null)
+  }
+
+  const runTest = () => {
+    if (!isValid) return
+    setLoading(true)
+    setError('')
+    setResult(null)
+    api.testPortfolio(
+      components.map(({ index, weight }) => ({ index, weight: Number(weight) })),
+      rebalancing,
+      correlationInterval,
+      filters,
+    )
+      .then(setResult)
+      .catch((reason) => setError(reason.message))
+      .finally(() => setLoading(false))
+  }
+
+  const drawdownRows = result?.drawdown?.drawdown || []
+  const maxDrawdown = drawdownRows.length ? Math.min(...drawdownRows.map((row) => Number(row.drawdown)).filter(Number.isFinite)) : null
+  const riskRows = result?.risk_return?.results_df || []
+  const rebalanceLabels = {
+    buy_and_hold: 'Buy & hold',
+    daily: 'Daily rebalancing',
+    monthly: 'Monthly rebalancing',
+    yearly: 'Yearly rebalancing',
+  }
+
+  return (
+    <>
+      <div className="portfolio-builder-grid">
+        <Panel title="Build your test portfolio" eyebrow="Consumer indexes only" action={<span className={`weight-total ${isValid ? 'valid' : ''}`}>{formatNumber(totalWeight, 0)}% allocated</span>}>
+          <div className="portfolio-components">
+            {components.map((component, position) => (
+              <div className="component-row" key={component.id}>
+                <span className="component-number">0{position + 1}</span>
+                <select value={component.index} onChange={(event) => updateComponent(component.id, 'index', event.target.value)}>
+                  {indexes.filter((name) => name === component.index || !selectedIndexes.includes(name)).map((name) => <option key={name} value={name}>{name}</option>)}
+                </select>
+                <div className="weight-input"><input type="number" min="0" max="100" step="1" value={component.weight} onChange={(event) => updateComponent(component.id, 'weight', event.target.value)} /><span>%</span></div>
+                <button className="remove-component" onClick={() => removeComponent(component.id)} disabled={components.length <= 1} aria-label={`Remove ${component.index}`}>×</button>
+              </div>
+            ))}
+          </div>
+          <div className="component-actions">
+            <button className="add-component" onClick={addComponent} disabled={components.length >= indexes.length}>+ Add index</button>
+            <span className={isValid ? 'allocation-hint valid' : 'allocation-hint'}>{isValid ? 'Ready to test' : 'Weights must add up to 100%'}</span>
+          </div>
+        </Panel>
+        <Panel title="Rebalancing strategy" eyebrow="How the portfolio evolves">
+          <div className="strategy-list">
+            {[
+              ['buy_and_hold', 'Buy & hold', 'Let weights drift with performance'],
+              ['daily', 'Daily', 'Restore target weights every session'],
+              ['monthly', 'Monthly', 'Restore weights at each month start'],
+              ['yearly', 'Yearly', 'Restore weights at each year start'],
+            ].map(([value, label, detail]) => (
+              <button className={`strategy-option ${rebalancing === value ? 'active' : ''}`} onClick={() => setRebalancing(value)} key={value}>
+                <span className="strategy-radio" />
+                <span><strong>{label}</strong><small>{detail}</small></span>
+              </button>
+            ))}
+          </div>
+          <div className="portfolio-run-row">
+            <button className="run-button" onClick={runTest} disabled={!isValid || loading}>{loading ? 'Running test…' : 'Run portfolio test'} <span>→</span></button>
+            <span className="run-caption">{rebalanceLabels[rebalancing]}</span>
+          </div>
+        </Panel>
+      </div>
+      <div className="portfolio-correlation-controls">
+        <span className="eyebrow">Correlation interval</span>
+        <div className="segmented-control">{['daily', 'month', 'year'].map((item) => <button className={correlationInterval === item ? 'active' : ''} onClick={() => setCorrelationInterval(item)} key={item}>{item}</button>)}</div>
+        <span className="control-note">Used when the test is run</span>
+      </div>
+      <ErrorBanner message={error} />
+      {loading && <LoadingState label="Simulating portfolio and calculating metrics" />}
+      {!loading && result && (
+        <>
+          <div className="metric-grid">
+            <MetricCard label="Total return" value={formatPercent(result.rentability?.total_return)} detail={rebalanceLabels[result.rebalancing]} accent="mint" />
+            <MetricCard label="CAGR" value={formatPercent(result.rentability?.annualized_return)} detail="Annualized compounded return" accent="gold" />
+            <MetricCard label="Portfolio risk" value={`${formatNumber(result.rentability?.annualized_volatility)}%`} detail="Annualized volatility" accent="blue" />
+            <MetricCard label="Maximum drawdown" value={`${formatNumber(maxDrawdown)}%`} detail="Peak to trough" accent="pink" />
+          </div>
+          <div className="overview-grid portfolio-chart-grid">
+            <Panel title="Portfolio performance" eyebrow={`${rebalanceLabels[result.rebalancing]} · normalized return`}>
+              <LineChart rows={result.rentability?.rentability} valueKey="rentability" />
+            </Panel>
+            <Panel title="Drawdown profile" eyebrow="Distance from running peak">
+              <LineChart rows={drawdownRows} valueKey="drawdown" color="#ef7b9a" />
+            </Panel>
+          </div>
+          <div className="comparison-grid portfolio-results-grid">
+            <Panel title="Portfolio vs components" eyebrow="Return and risk by series">
+              <AnalysisTable rows={riskRows} columns={[['index', 'Index'], ['total_return', 'Return'], ['annualized_return', 'CAGR'], ['annualized_volatility', 'Risk']]} percentColumns={['total_return', 'annualized_return', 'annualized_volatility']} />
+            </Panel>
+            <Panel title="Composition" eyebrow="Target allocations">
+              <div className="composition-list">{result.components?.map((component, index) => <div className="composition-row" key={component.index}><span><i style={{ backgroundColor: COLORS[index % COLORS.length] }} />{component.index}</span><strong>{formatNumber(component.weight, 0)}%</strong></div>)}</div>
+            </Panel>
+          </div>
+          <Panel title="Correlation with composing indexes" eyebrow={`${correlationInterval} return variation`} className="portfolio-correlation-panel">
+            <CorrelationTable rows={result.correlation?.correlation_matrix} />
+          </Panel>
+        </>
+      )}
+      {!loading && !result && !error && <EmptyState title="Configure a composition and run the test" detail="The results will include performance, CAGR, risk, drawdown, and correlations." />}
     </>
   )
 }

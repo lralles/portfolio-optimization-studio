@@ -85,6 +85,19 @@ class InflationBondsRequest(BaseModel):
     seed: int = 42
 
 
+class PortfolioComponentRequest(BaseModel):
+    index: str
+    weight: float = Field(ge=0)
+
+
+class PortfolioTestingRequest(BaseModel):
+    components: list[PortfolioComponentRequest] = Field(min_length=1)
+    rebalancing: Literal["buy_and_hold", "daily", "monthly", "yearly"] = "buy_and_hold"
+    correlation_interval: Literal["daily", "month", "year"] = "daily"
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+
+
 def _response(value):
     return to_jsonable(value)
 
@@ -256,6 +269,19 @@ def inflation_bonds_risk_return(request: InflationBondsRequest):
         application.inflation_bonds_risk_return(
             request.random_portfolios,
             request.seed,
+        )
+    )
+
+
+@app.post("/api/v1/analyses/portfolio-testing")
+def portfolio_testing(request: PortfolioTestingRequest):
+    return _response(
+        application.portfolio_testing(
+            [(component.index, component.weight) for component in request.components],
+            request.rebalancing,
+            request.correlation_interval,
+            request.start_date,
+            request.end_date,
         )
     )
 

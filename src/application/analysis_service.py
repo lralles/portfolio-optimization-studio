@@ -21,6 +21,12 @@ from src.portfolio_generator.inflation_bonds_indexes import (
     simulate_inflation_bonds_portfolio,
     simulate_inflation_bonds_portfolio_monthly,
 )
+from src.portfolio_generator.portfolio_simulator import (
+    simulate_portfolio,
+    simulate_portfolio_rebalanced,
+    simulate_portfolio_rebalanced_monthly,
+    simulate_portfolio_rebalanced_yearly,
+)
 
 
 class AnalysisApplication:
@@ -277,6 +283,71 @@ class AnalysisApplication:
             step_size,
             top_n,
         )
+
+    @classmethod
+    def portfolio_testing(
+        cls,
+        components: Iterable[tuple[str, float]],
+        rebalancing: str = "buy_and_hold",
+        correlation_interval: str = "daily",
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+    ) -> dict:
+        component_list = list(components)
+        if not component_list:
+            raise ValueError("At least one portfolio component is required")
+
+        names = [name for name, _ in component_list]
+        indexes = cls.get_indexes(names)
+        weights = [float(weight) for _, weight in component_list]
+        if any(weight < 0 for weight in weights):
+            raise ValueError("Portfolio weights cannot be negative")
+        if not any(weight > 0 for weight in weights):
+            raise ValueError("At least one portfolio weight must be positive")
+
+        total_weight = sum(weights)
+        if abs(total_weight - 100.0) > 1e-6:
+            raise ValueError(f"Portfolio weights must sum to 100%, got {total_weight:g}%")
+
+        portfolio = [
+            (index_data, weight / 100.0)
+            for index_data, weight in zip(indexes, weights)
+        ]
+        simulators = {
+            "buy_and_hold": simulate_portfolio,
+            "daily": simulate_portfolio_rebalanced,
+            "monthly": simulate_portfolio_rebalanced_monthly,
+            "yearly": simulate_portfolio_rebalanced_yearly,
+        }
+        simulator = simulators.get(rebalancing)
+        if simulator is None:
+            available = ", ".join(simulators)
+            raise ValueError(f"Unknown rebalancing '{rebalancing}'. Available: {available}")
+
+        simulated = simulator(portfolio, start_date, end_date)
+        simulated["name"] = "portfolio"
+        all_series = [simulated, *indexes]
+
+        return {
+            "portfolio": simulated,
+            "components": [
+                {"index": name, "weight": weight}
+                for name, weight in component_list
+            ],
+            "rebalancing": rebalancing,
+            "rentability": compute_rentability(simulated["data"]),
+            "drawdown": compute_drawdown(simulated["data"]),
+            "risk_return": compute_risk_return_analysis(
+                all_series, start_date, end_date
+            ),
+            "correlation": compute_correlation_matrix(
+                [series["data"] for series in all_series],
+                [series["name"] for series in all_series],
+                start_date,
+                end_date,
+                correlation_interval,
+            ),
+        }
 
     @classmethod
     def inflation_bonds_risk_return(

@@ -95,7 +95,7 @@ From the project root, after installing the requirements:
 uvicorn src.webapi.main:app --reload
 ```
 
-The API is documented at `http://127.0.0.1:8000/docs`. Use `GET /api/v1/indexes` to list available consumer indexes. The first API version accepts index names and analysis parameters; custom weighted portfolios are intentionally not part of this surface yet.
+The API is documented at `http://127.0.0.1:8000/docs`. Use `GET /api/v1/indexes` to list available consumer indexes. Portfolio testing accepts consumer indexes with percentage weights and supports buy-and-hold, daily, monthly, and yearly rebalancing.
 
 To use the sample requests, open the `.bruno/` directory as a collection in Bruno, select the `local` environment, and run the requests against the running API. The collection includes one request for every endpoint.
 
