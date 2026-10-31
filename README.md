@@ -99,6 +99,18 @@ The API is documented at `http://127.0.0.1:8000/docs`. Use `GET /api/v1/indexes`
 
 To use the sample requests, open the `.bruno/` directory as a collection in Bruno, select the `local` environment, and run the requests against the running API. The collection includes one request for every endpoint.
 
+### 4. Start the React frontend
+
+In another terminal, with the API still running:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open the Vite URL shown in the terminal, usually `http://127.0.0.1:5173`. The frontend uses `http://127.0.0.1:8000` by default; set `VITE_API_BASE_URL` in `frontend/.env` if the API runs elsewhere.
+
 ## Project Workflow
 
 ```text
