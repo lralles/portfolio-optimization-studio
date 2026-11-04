@@ -81,6 +81,15 @@ export const api = {
     })
   },
 
+  getSlidingWindow(indexes, windowSize, filters) {
+    return post('/api/v1/analyses/sliding-window', {
+      indexes,
+      window_size: windowSize,
+      start_date: filters.startDate || null,
+      end_date: filters.endDate || null,
+    })
+  },
+
   testPortfolio(components, rebalancing, correlationInterval, filters) {
     return post('/api/v1/analyses/portfolio-testing', {
       components,

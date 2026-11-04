@@ -5,3 +5,4 @@ data_backup.zip
 __pycache__
 frontend/node_modules
 frontend/dist
+.local

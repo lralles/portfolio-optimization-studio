@@ -99,6 +99,22 @@ The API is documented at `http://127.0.0.1:8000/docs`. Use `GET /api/v1/indexes`
 
 To use the sample requests, open the `.bruno/` directory as a collection in Bruno, select the `local` environment, and run the requests against the running API. The collection includes one request for every endpoint.
 
+### Local start and stop scripts
+
+After installing the Python and frontend dependencies, start both services from the project root:
+
+```bash
+scripts/local.start.sh
+```
+
+This starts the backend on `http://127.0.0.1:8000` and the frontend on `http://127.0.0.1:5173`. Stop both services with:
+
+```bash
+scripts/local.stop.sh
+```
+
+Runtime PID files and logs are stored in `.local/`.
+
 ### 4. Start the React frontend
 
 In another terminal, with the API still running:

@@ -6,6 +6,7 @@ const COLORS = ['#56d8be', '#f4b75e', '#8d9eff', '#ef7b9a', '#72b8ff', '#c39af5'
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', icon: '◒' },
   { id: 'compare', label: 'Compare indexes', icon: '◫' },
+  { id: 'assets', label: 'Head to head comparison', icon: '◌' },
   { id: 'correlation', label: 'Correlation', icon: '⌘' },
   { id: 'portfolio', label: 'Portfolio testing', icon: '◈' },
 ]
@@ -145,16 +146,16 @@ function LineChart({ rows, valueKey, color = '#56d8be', suffix = '%' }) {
   )
 }
 
-function MultiLineChart({ series }) {
+function MultiLineChart({ series, valueKey = 'rentability', suffix = '%' }) {
   const prepared = series
-    .map((item) => ({ ...item, data: downsample(item.data, 'rentability') }))
+    .map((item) => ({ ...item, data: downsample(item.data, valueKey) }))
     .filter((item) => item.data.length)
   if (!prepared.length) return <EmptyState title="No comparison data" />
 
   const width = 760
   const height = 300
   const padding = { top: 24, right: 22, bottom: 34, left: 52 }
-  const values = prepared.flatMap((item) => item.data.map((row) => Number(row.rentability)))
+  const values = prepared.flatMap((item) => item.data.map((row) => Number(row[valueKey])))
   const min = Math.min(...values)
   const max = Math.max(...values)
   const range = max - min || 1
@@ -169,11 +170,11 @@ function MultiLineChart({ series }) {
         {ticks.map((tick, index) => (
           <g key={index}>
             <line x1={padding.left} x2={width - padding.right} y1={y(tick)} y2={y(tick)} className="chart-grid" />
-            <text x={padding.left - 10} y={y(tick) + 4} textAnchor="end" className="chart-label">{formatNumber(tick)}%</text>
+            <text x={padding.left - 10} y={y(tick) + 4} textAnchor="end" className="chart-label">{formatNumber(tick)}{suffix}</text>
           </g>
         ))}
         {prepared.map((item, seriesIndex) => {
-          const path = item.data.map((row, index) => `${index === 0 ? 'M' : 'L'} ${x(index)} ${y(Number(row.rentability))}`).join(' ')
+          const path = item.data.map((row, index) => `${index === 0 ? 'M' : 'L'} ${x(index)} ${y(Number(row[valueKey]))}`).join(' ')
           return <path key={item.name} d={path} fill="none" stroke={COLORS[seriesIndex % COLORS.length]} strokeWidth="2.5" strokeLinecap="round" />
         })}
       </svg>
@@ -462,6 +463,7 @@ function App() {
               error={error.comparison}
             />
           )}
+          {activeView === 'assets' && <AssetComparisonView indexes={indexes} filters={filters} />}
           {activeView === 'correlation' && (
             <CorrelationView
               indexes={indexes}
@@ -558,6 +560,109 @@ function CompareView({ indexes, selected, setSelected, comparison, loading, erro
         </>
       )}
       {!loading && !comparison && !error && <EmptyState title="Select at least two indexes" detail="Choose the series you want to compare above." />}
+    </>
+  )
+}
+
+function AssetComparisonView({ indexes, filters }) {
+  const [selected, setSelected] = useState(['bovespa', 'ifix', 'sp500brl'])
+  const [correlationInterval, setCorrelationInterval] = useState('month')
+  const [windowSize, setWindowSize] = useState(252)
+  const [result, setResult] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!indexes.length) return
+    setSelected((current) => {
+      const valid = current.filter((name) => indexes.includes(name))
+      return valid.length >= 2 ? valid : indexes.filter((name) => ['bovespa', 'ifix', 'sp500brl'].includes(name)).slice(0, 3)
+    })
+  }, [indexes])
+
+  useEffect(() => {
+    setResult(null)
+  }, [filters])
+
+  const runComparison = () => {
+    if (selected.length < 2) return
+    setLoading(true)
+    setError('')
+    setResult(null)
+    Promise.all([
+      api.getRiskReturn(selected, filters),
+      api.getCorrelation(selected, correlationInterval, filters),
+      api.getSlidingWindow(selected, windowSize, filters),
+      Promise.all(selected.map((name) => api.getDrawdown(name, filters))),
+    ])
+      .then(([riskReturn, correlation, sliding, drawdowns]) => {
+        setResult({
+          riskReturn,
+          correlation,
+          sliding,
+          drawdowns: selected.map((name, index) => ({ name, data: drawdowns[index].drawdown || [] })),
+        })
+      })
+      .catch((reason) => setError(reason.message))
+      .finally(() => setLoading(false))
+  }
+
+  const riskRows = result?.riskReturn?.results_df || []
+  const drawdownSeries = result?.drawdowns || []
+  const slidingResults = result?.sliding?.results || {}
+  const slidingSeries = Object.entries(slidingResults).map(([name, data]) => ({ name, data }))
+  const slidingSummary = Object.entries(slidingResults).map(([name, data]) => ({
+    index: name,
+    windows: data.length,
+    date: data[data.length - 1]?.date,
+    annualized_return: data[data.length - 1]?.annualized_return,
+    annualized_volatility: data[data.length - 1]?.annualized_volatility,
+  }))
+
+  return (
+    <>
+      <Panel title="Choose assets to compare" eyebrow="Consumer universe" action={<span className="panel-meta">{selected.length} selected</span>}>
+        <IndexPicker indexes={indexes} selected={selected} onChange={(next) => { setSelected(next); setResult(null) }} />
+        <div className="asset-analysis-controls">
+          <label className="analysis-select"><span>Sliding window</span><select value={windowSize} onChange={(event) => setWindowSize(Number(event.target.value))}><option value="63">63 sessions</option><option value="126">126 sessions</option><option value="252">252 sessions</option><option value="504">504 sessions</option></select></label>
+          <label className="analysis-select"><span>Correlation interval</span><select value={correlationInterval} onChange={(event) => setCorrelationInterval(event.target.value)}><option value="daily">Daily</option><option value="month">Monthly</option><option value="year">Yearly</option></select></label>
+          <button className="run-button asset-run-button" onClick={runComparison} disabled={selected.length < 2 || loading}>{loading ? 'Analyzing…' : 'Run head to head comparison'} <span>→</span></button>
+        </div>
+      </Panel>
+      <ErrorBanner message={error} />
+      {loading && <LoadingState label="Calculating drawdowns, risk-return, correlation, and sliding windows" />}
+      {!loading && result && (
+        <>
+          <div className="comparison-grid asset-top-grid">
+            <Panel title="Risk / return" eyebrow="Annualized figures">
+              <ScatterPlot rows={riskRows} />
+            </Panel>
+            <Panel title="Correlation matrix" eyebrow={`${correlationInterval} return variation`}>
+              <CorrelationTable rows={result.correlation?.correlation_matrix} />
+            </Panel>
+          </div>
+          <Panel title="Drawdown comparison" eyebrow="Distance from each asset's running peak">
+            <MultiLineChart series={drawdownSeries} valueKey="drawdown" suffix="%" />
+          </Panel>
+          <div className="comparison-grid asset-window-grid">
+            <Panel title="Sliding annualized returns" eyebrow={`${windowSize} session window`}>
+              <MultiLineChart series={slidingSeries} valueKey="annualized_return" suffix="%" />
+            </Panel>
+            <Panel title="Sliding annualized risk" eyebrow={`${windowSize} session window`}>
+              <MultiLineChart series={slidingSeries} valueKey="annualized_volatility" suffix="%" />
+            </Panel>
+          </div>
+          <div className="comparison-grid asset-summary-grid">
+            <Panel title="Risk / return summary" eyebrow="Full selected period">
+              <AnalysisTable rows={riskRows} columns={[['index', 'Asset'], ['total_return', 'Return'], ['annualized_return', 'CAGR'], ['annualized_volatility', 'Risk']]} percentColumns={['total_return', 'annualized_return', 'annualized_volatility']} />
+            </Panel>
+            <Panel title="Latest sliding-window snapshot" eyebrow="Most recent calculated window">
+              <SlidingSummaryTable rows={slidingSummary} />
+            </Panel>
+          </div>
+        </>
+      )}
+      {!loading && !result && !error && <EmptyState title="Select at least two assets and run the comparison" detail="The analysis uses the current date range and selected window settings." />}
     </>
   )
 }
@@ -742,6 +847,18 @@ function AnalysisTable({ rows, columns, percentColumns = [] }) {
       <table className="data-table">
         <thead><tr>{columns.map(([, label]) => <th key={label}>{label}</th>)}</tr></thead>
         <tbody>{sorted.map((row) => <tr key={row.index}>{columns.map(([key]) => <td key={key} className={key === 'index' ? 'strong-cell' : ''}>{key === 'index' ? row[key] : percentColumns.includes(key) ? formatPercent(row[key]) : formatNumber(row[key])}</td>)}</tr>)}</tbody>
+      </table>
+    </div>
+  )
+}
+
+function SlidingSummaryTable({ rows }) {
+  if (!rows?.length) return <EmptyState title="No sliding-window observations" />
+  return (
+    <div className="table-scroll">
+      <table className="data-table">
+        <thead><tr><th>Asset</th><th>Windows</th><th>Latest</th><th>Return</th><th>Risk</th></tr></thead>
+        <tbody>{rows.map((row) => <tr key={row.index}><td className="strong-cell">{row.index}</td><td>{row.windows}</td><td>{formatDate(row.date)}</td><td>{formatPercent(row.annualized_return)}</td><td>{formatPercent(row.annualized_volatility)}</td></tr>)}</tbody>
       </table>
     </div>
   )
