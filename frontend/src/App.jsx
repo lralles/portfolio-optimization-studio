@@ -300,10 +300,10 @@ function ScatterPlot({ rows }) {
   const padding = { top: 22, right: 24, bottom: 44, left: 60 }
   const xValues = data.map((row) => Number(row.annualized_volatility))
   const yValues = data.map((row) => Number(row.annualized_return))
-  const minX = Math.min(...xValues)
-  const maxX = Math.max(...xValues)
-  const minY = Math.min(...yValues)
-  const maxY = Math.max(...yValues)
+  const minX = Math.min(0, ...xValues)
+  const maxX = Math.max(0, ...xValues)
+  const minY = Math.min(0, ...yValues)
+  const maxY = Math.max(0, ...yValues)
   const xRange = maxX - minX || 1
   const yRange = maxY - minY || 1
   const x = (value) => padding.left + ((value - minX) * (width - padding.left - padding.right)) / xRange
@@ -311,14 +311,22 @@ function ScatterPlot({ rows }) {
   const hovered = hoveredIndex === null ? null : data[hoveredIndex]
   const hoveredX = hovered ? x(Number(hovered.annualized_volatility)) : null
   const hoveredY = hovered ? y(Number(hovered.annualized_return)) : null
+  const xTicks = [...new Set([minX, 0, maxX])]
+  const yTicks = [...new Set([minY, 0, maxY])]
 
   return (
     <div className="chart-wrap">
       <svg className="scatter-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Risk return scatter plot" onMouseLeave={() => setHoveredIndex(null)}>
-        {[0, 0.5, 1].map((step) => (
-          <g key={step}>
-            <line x1={padding.left} x2={width - padding.right} y1={padding.top + step * (height - padding.top - padding.bottom)} y2={padding.top + step * (height - padding.top - padding.bottom)} className="chart-grid" />
-            <line x1={padding.left + step * (width - padding.left - padding.right)} x2={padding.left + step * (width - padding.left - padding.right)} y1={padding.top} y2={height - padding.bottom} className="chart-grid vertical" />
+        {yTicks.map((tick) => (
+          <g key={`y-${tick}`}>
+            <line x1={padding.left} x2={width - padding.right} y1={y(tick)} y2={y(tick)} className={tick === 0 ? 'chart-zero-line' : 'chart-grid'} />
+            <text x={padding.left - 10} y={y(tick) + 4} textAnchor="end" className="chart-label">{formatNumber(tick)}%</text>
+          </g>
+        ))}
+        {xTicks.map((tick) => (
+          <g key={`x-${tick}`}>
+            <line x1={x(tick)} x2={x(tick)} y1={padding.top} y2={height - padding.bottom} className={tick === 0 ? 'chart-zero-line vertical' : 'chart-grid vertical'} />
+            <text x={x(tick)} y={height - padding.bottom + 17} textAnchor="middle" className="chart-label">{formatNumber(tick)}%</text>
           </g>
         ))}
         {data.map((row, index) => (
