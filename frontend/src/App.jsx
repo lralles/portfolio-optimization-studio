@@ -41,10 +41,25 @@ function formatDate(value) {
 function downsample(rows = [], valueKey, limit = 160) {
   const valid = rows.filter((row) => Number.isFinite(Number(row[valueKey])))
   if (valid.length <= limit) return valid
-  return Array.from({ length: limit }, (_, index) => {
-    const sourceIndex = Math.round((index * (valid.length - 1)) / (limit - 1))
-    return valid[sourceIndex]
-  })
+
+  const preservedIndexes = new Set([0, valid.length - 1])
+  const minIndex = valid.reduce((best, row, index) => (
+    Number(row[valueKey]) < Number(valid[best][valueKey]) ? index : best
+  ), 0)
+  const maxIndex = valid.reduce((best, row, index) => (
+    Number(row[valueKey]) > Number(valid[best][valueKey]) ? index : best
+  ), 0)
+  preservedIndexes.add(minIndex)
+  preservedIndexes.add(maxIndex)
+
+  const remaining = Math.max(limit - preservedIndexes.size, 0)
+  for (let index = 0; index < remaining; index += 1) {
+    preservedIndexes.add(Math.round((index * (valid.length - 1)) / Math.max(remaining - 1, 1)))
+  }
+
+  return [...preservedIndexes]
+    .sort((left, right) => left - right)
+    .map((index) => valid[index])
 }
 
 function ErrorBanner({ message }) {
