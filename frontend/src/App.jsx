@@ -38,6 +38,13 @@ function formatDate(value) {
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 }
 
+function formatTooltipDate(value) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
 function downsample(rows = [], valueKey, limit = 160) {
   const valid = rows.filter((row) => Number.isFinite(Number(row[valueKey])))
   if (valid.length <= limit) return valid
@@ -116,8 +123,27 @@ function Panel({ title, eyebrow, action, children, className = '' }) {
   )
 }
 
+function ChartTooltip({ x, y, width, height, title, rows, chartWidth, chartHeight }) {
+  const tooltipX = Math.max(8, Math.min(x + 12, chartWidth - width - 8))
+  const tooltipY = Math.max(8, Math.min(y - height - 12, chartHeight - height - 8))
+
+  return (
+    <g className="chart-tooltip" transform={`translate(${tooltipX} ${tooltipY})`} pointerEvents="none">
+      <rect width={width} height={height} rx="6" />
+      <text x="10" y="17" className="chart-tooltip-title">{title}</text>
+      {rows.map((row, index) => (
+        <text x="10" y={34 + index * 15} className="chart-tooltip-row" key={row.label}>
+          <tspan className="chart-tooltip-label">{row.label}</tspan>
+          <tspan dx="5" className="chart-tooltip-value">{row.value}</tspan>
+        </text>
+      ))}
+    </g>
+  )
+}
+
 function LineChart({ rows, valueKey, color = '#56d8be', suffix = '%' }) {
   const data = useMemo(() => downsample(rows, valueKey), [rows, valueKey])
+  const [hoveredIndex, setHoveredIndex] = useState(null)
   if (!data.length) {
     return <EmptyState title="No observations for this period" />
   }
@@ -134,10 +160,20 @@ function LineChart({ rows, valueKey, color = '#56d8be', suffix = '%' }) {
   const path = data.map((row, index) => `${index === 0 ? 'M' : 'L'} ${x(index)} ${y(Number(row[valueKey]))}`).join(' ')
   const area = `${path} L ${x(data.length - 1)} ${height - padding.bottom} L ${x(0)} ${height - padding.bottom} Z`
   const ticks = [max, min + range / 2, min]
+  const hovered = hoveredIndex === null ? null : data[hoveredIndex]
+  const hoveredX = hoveredIndex === null ? null : x(hoveredIndex)
+  const hoveredY = hovered === null ? null : y(Number(hovered[valueKey]))
+  const updateHover = (event) => {
+    const bounds = event.currentTarget.getBoundingClientRect()
+    const pointerX = ((event.clientX - bounds.left) / bounds.width) * width
+    const ratio = (pointerX - padding.left) / (width - padding.left - padding.right)
+    const index = Math.round(Math.max(0, Math.min(1, ratio)) * (data.length - 1))
+    setHoveredIndex(index)
+  }
 
   return (
     <div className="chart-wrap">
-      <svg className="line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Performance chart">
+      <svg className="line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Performance chart" onMouseMove={updateHover} onMouseLeave={() => setHoveredIndex(null)}>
         <defs>
           <linearGradient id={`area-${valueKey}`} x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity=".24" />
@@ -154,6 +190,23 @@ function LineChart({ rows, valueKey, color = '#56d8be', suffix = '%' }) {
         ))}
         <path d={area} fill={`url(#area-${valueKey})`} />
         <path d={path} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        {hovered && (
+          <>
+            <line x1={hoveredX} x2={hoveredX} y1={padding.top} y2={height - padding.bottom} className="chart-hover-line" />
+            <circle cx={hoveredX} cy={hoveredY} r="5" fill={color} className="chart-hover-point" />
+            <ChartTooltip
+              x={hoveredX}
+              y={hoveredY}
+              width={150}
+              height={51}
+              title={formatTooltipDate(hovered.date)}
+              rows={[{ label: 'Value', value: `${formatNumber(hovered[valueKey])}${suffix}` }]}
+              chartWidth={width}
+              chartHeight={height}
+            />
+          </>
+        )}
+        <rect x={padding.left} y={padding.top} width={width - padding.left - padding.right} height={height - padding.top - padding.bottom} className="chart-hover-area" />
         <text x={padding.left} y={height - 9} className="chart-label">{formatDate(data[0].date)}</text>
         <text x={width - padding.right} y={height - 9} textAnchor="end" className="chart-label">{formatDate(data[data.length - 1].date)}</text>
       </svg>
@@ -165,6 +218,7 @@ function MultiLineChart({ series, valueKey = 'rentability', suffix = '%' }) {
   const prepared = series
     .map((item) => ({ ...item, data: downsample(item.data, valueKey) }))
     .filter((item) => item.data.length)
+  const [hoveredIndex, setHoveredIndex] = useState(null)
   if (!prepared.length) return <EmptyState title="No comparison data" />
 
   const width = 760
@@ -178,10 +232,24 @@ function MultiLineChart({ series, valueKey = 'rentability', suffix = '%' }) {
   const x = (index) => padding.left + (index * (width - padding.left - padding.right)) / Math.max(longest - 1, 1)
   const y = (value) => padding.top + ((max - value) * (height - padding.top - padding.bottom)) / range
   const ticks = [max, min + range / 2, min]
+  const hoveredSeries = hoveredIndex === null ? [] : prepared.map((item) => ({
+    ...item,
+    row: item.data[Math.min(hoveredIndex, item.data.length - 1)],
+  }))
+  const hovered = hoveredSeries.find((item) => item.row)
+  const hoveredX = hoveredIndex === null ? null : x(Math.min(hoveredIndex, longest - 1))
+  const hoveredY = hovered ? y(Number(hovered.row[valueKey])) : null
+  const updateHover = (event) => {
+    const bounds = event.currentTarget.getBoundingClientRect()
+    const pointerX = ((event.clientX - bounds.left) / bounds.width) * width
+    const ratio = (pointerX - padding.left) / (width - padding.left - padding.right)
+    const index = Math.round(Math.max(0, Math.min(1, ratio)) * (longest - 1))
+    setHoveredIndex(index)
+  }
 
   return (
     <div className="chart-wrap">
-      <svg className="line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Index comparison chart">
+      <svg className="line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Index comparison chart" onMouseMove={updateHover} onMouseLeave={() => setHoveredIndex(null)}>
         {ticks.map((tick, index) => (
           <g key={index}>
             <line x1={padding.left} x2={width - padding.right} y1={y(tick)} y2={y(tick)} className="chart-grid" />
@@ -192,6 +260,23 @@ function MultiLineChart({ series, valueKey = 'rentability', suffix = '%' }) {
           const path = item.data.map((row, index) => `${index === 0 ? 'M' : 'L'} ${x(index)} ${y(Number(row[valueKey]))}`).join(' ')
           return <path key={item.name} d={path} fill="none" stroke={COLORS[seriesIndex % COLORS.length]} strokeWidth="2.5" strokeLinecap="round" />
         })}
+        {hovered && (
+          <>
+            <line x1={hoveredX} x2={hoveredX} y1={padding.top} y2={height - padding.bottom} className="chart-hover-line" />
+            {hoveredSeries.map((item, index) => item.row && <circle key={item.name} cx={x(Math.min(hoveredIndex, item.data.length - 1))} cy={y(Number(item.row[valueKey]))} r="4.5" fill={COLORS[index % COLORS.length]} className="chart-hover-point" />)}
+            <ChartTooltip
+              x={hoveredX}
+              y={hoveredY}
+              width={190}
+              height={35 + hoveredSeries.length * 15}
+              title={formatTooltipDate(hovered.row.date)}
+              rows={hoveredSeries.filter((item) => item.row).map((item) => ({ label: item.name, value: `${formatNumber(item.row[valueKey])}${suffix}` }))}
+              chartWidth={width}
+              chartHeight={height}
+            />
+          </>
+        )}
+        <rect x={padding.left} y={padding.top} width={width - padding.left - padding.right} height={height - padding.top - padding.bottom} className="chart-hover-area" />
       </svg>
       <div className="legend">
         {prepared.map((item, index) => (
@@ -207,6 +292,7 @@ function MultiLineChart({ series, valueKey = 'rentability', suffix = '%' }) {
 
 function ScatterPlot({ rows }) {
   const data = rows.filter((row) => Number.isFinite(Number(row.annualized_return)) && Number.isFinite(Number(row.annualized_volatility)))
+  const [hoveredIndex, setHoveredIndex] = useState(null)
   if (!data.length) return <EmptyState title="No risk-return observations" />
 
   const width = 760
@@ -222,10 +308,13 @@ function ScatterPlot({ rows }) {
   const yRange = maxY - minY || 1
   const x = (value) => padding.left + ((value - minX) * (width - padding.left - padding.right)) / xRange
   const y = (value) => height - padding.bottom - ((value - minY) * (height - padding.top - padding.bottom)) / yRange
+  const hovered = hoveredIndex === null ? null : data[hoveredIndex]
+  const hoveredX = hovered ? x(Number(hovered.annualized_volatility)) : null
+  const hoveredY = hovered ? y(Number(hovered.annualized_return)) : null
 
   return (
     <div className="chart-wrap">
-      <svg className="scatter-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Risk return scatter plot">
+      <svg className="scatter-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Risk return scatter plot" onMouseLeave={() => setHoveredIndex(null)}>
         {[0, 0.5, 1].map((step) => (
           <g key={step}>
             <line x1={padding.left} x2={width - padding.right} y1={padding.top + step * (height - padding.top - padding.bottom)} y2={padding.top + step * (height - padding.top - padding.bottom)} className="chart-grid" />
@@ -233,11 +322,26 @@ function ScatterPlot({ rows }) {
           </g>
         ))}
         {data.map((row, index) => (
-          <g key={row.index}>
+          <g key={row.index} onMouseEnter={() => setHoveredIndex(index)}>
             <circle cx={x(Number(row.annualized_volatility))} cy={y(Number(row.annualized_return))} r="7" fill={COLORS[index % COLORS.length]} className="scatter-point" />
             <text x={x(Number(row.annualized_volatility)) + 10} y={y(Number(row.annualized_return)) + 4} className="scatter-label">{row.index}</text>
           </g>
         ))}
+        {hovered && (
+          <ChartTooltip
+            x={hoveredX}
+            y={hoveredY}
+            width={190}
+            height={66}
+            title={hovered.index}
+            rows={[
+              { label: 'Return', value: `${formatNumber(hovered.annualized_return)}%` },
+              { label: 'Risk', value: `${formatNumber(hovered.annualized_volatility)}%` },
+            ]}
+            chartWidth={width}
+            chartHeight={height}
+          />
+        )}
         <text x={width / 2} y={height - 9} textAnchor="middle" className="axis-label">Annualized volatility</text>
         <text x="14" y={height / 2} transform={`rotate(-90 14 ${height / 2})`} textAnchor="middle" className="axis-label">Annualized return</text>
       </svg>

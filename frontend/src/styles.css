@@ -97,6 +97,13 @@ button { cursor: pointer; }
 .line-chart, .scatter-chart { display: block; width: 100%; height: auto; overflow: visible; }
 .chart-grid { stroke: #273746; stroke-width: 1; stroke-dasharray: 3 4; }.chart-grid.vertical { opacity: .6; }
 .chart-label { fill: #65788b; font-size: 10px; }.axis-label { fill: #75889b; font-size: 10px; }.scatter-label { fill: #b2c2d0; font-size: 10px; }
+.chart-hover-area { fill: transparent; cursor: crosshair; }
+.chart-hover-line { stroke: #8ea4b3; stroke-width: 1; stroke-dasharray: 3 4; opacity: .7; }
+.chart-hover-point { stroke: #0f1821; stroke-width: 2; }
+.chart-tooltip rect { fill: #0d151f; stroke: #486072; stroke-width: 1; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .3)); }
+.chart-tooltip-title { fill: #e6eef3; font-size: 10px; font-weight: 700; }
+.chart-tooltip-row { fill: #9dafbd; font-size: 10px; }
+.chart-tooltip-label { fill: #8498a8; }.chart-tooltip-value { fill: #f0f6f7; font-weight: 700; }
 .scatter-point { stroke: #101821; stroke-width: 3; }.scatter-point:hover { r: 9; }
 .legend { display: flex; flex-wrap: wrap; gap: 12px 18px; margin: 0 14px; }
 .legend-item { display: flex; align-items: center; gap: 6px; color: #8b9bad; font-size: 10px; text-transform: uppercase; }.legend-item i { width: 8px; height: 8px; border-radius: 50%; }
