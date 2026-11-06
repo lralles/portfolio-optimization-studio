@@ -218,7 +218,7 @@ function MultiLineChart({ series, valueKey = 'rentability', suffix = '%' }) {
   const prepared = series
     .map((item) => ({ ...item, data: downsample(item.data, valueKey) }))
     .filter((item) => item.data.length)
-  const [hoveredIndex, setHoveredIndex] = useState(null)
+  const [hoveredDate, setHoveredDate] = useState(null)
   if (!prepared.length) return <EmptyState title="No comparison data" />
 
   const width = 760
@@ -228,23 +228,34 @@ function MultiLineChart({ series, valueKey = 'rentability', suffix = '%' }) {
   const min = Math.min(...values)
   const max = Math.max(...values)
   const range = max - min || 1
-  const longest = Math.max(...prepared.map((item) => item.data.length))
-  const x = (index) => padding.left + (index * (width - padding.left - padding.right)) / Math.max(longest - 1, 1)
+  const rowDate = (row, index) => {
+    const timestamp = new Date(row.date).getTime()
+    return Number.isFinite(timestamp) ? timestamp : index
+  }
+  const dateValues = prepared.flatMap((item) => item.data.map((row, index) => rowDate(row, index)))
+  const minDate = Math.min(...dateValues)
+  const maxDate = Math.max(...dateValues)
+  const dateRange = maxDate - minDate || 1
+  const x = (date) => padding.left + ((date - minDate) * (width - padding.left - padding.right)) / dateRange
+  const xForRow = (row, index) => x(rowDate(row, index))
   const y = (value) => padding.top + ((max - value) * (height - padding.top - padding.bottom)) / range
   const ticks = [max, min + range / 2, min]
-  const hoveredSeries = hoveredIndex === null ? [] : prepared.map((item) => ({
+  const hoveredSeries = hoveredDate === null ? [] : prepared.map((item) => ({
     ...item,
-    row: item.data[Math.min(hoveredIndex, item.data.length - 1)],
+    point: item.data.reduce((closest, row, index) => (
+      Math.abs(rowDate(row, index) - hoveredDate) < Math.abs(rowDate(closest.row, closest.index) - hoveredDate)
+        ? { row, index }
+        : closest
+    ), { row: item.data[0], index: 0 }),
   }))
-  const hovered = hoveredSeries.find((item) => item.row)
-  const hoveredX = hoveredIndex === null ? null : x(Math.min(hoveredIndex, longest - 1))
-  const hoveredY = hovered ? y(Number(hovered.row[valueKey])) : null
+  const hovered = hoveredSeries.find((item) => item.point?.row)
+  const hoveredX = hoveredDate === null ? null : x(hoveredDate)
+  const hoveredY = hovered ? y(Number(hovered.point.row[valueKey])) : null
   const updateHover = (event) => {
     const bounds = event.currentTarget.getBoundingClientRect()
     const pointerX = ((event.clientX - bounds.left) / bounds.width) * width
     const ratio = (pointerX - padding.left) / (width - padding.left - padding.right)
-    const index = Math.round(Math.max(0, Math.min(1, ratio)) * (longest - 1))
-    setHoveredIndex(index)
+    setHoveredDate(minDate + Math.max(0, Math.min(1, ratio)) * dateRange)
   }
 
   return (
@@ -257,20 +268,20 @@ function MultiLineChart({ series, valueKey = 'rentability', suffix = '%' }) {
           </g>
         ))}
         {prepared.map((item, seriesIndex) => {
-          const path = item.data.map((row, index) => `${index === 0 ? 'M' : 'L'} ${x(index)} ${y(Number(row[valueKey]))}`).join(' ')
+          const path = item.data.map((row, index) => `${index === 0 ? 'M' : 'L'} ${xForRow(row, index)} ${y(Number(row[valueKey]))}`).join(' ')
           return <path key={item.name} d={path} fill="none" stroke={COLORS[seriesIndex % COLORS.length]} strokeWidth="2.5" strokeLinecap="round" />
         })}
         {hovered && (
           <>
             <line x1={hoveredX} x2={hoveredX} y1={padding.top} y2={height - padding.bottom} className="chart-hover-line" />
-            {hoveredSeries.map((item, index) => item.row && <circle key={item.name} cx={x(Math.min(hoveredIndex, item.data.length - 1))} cy={y(Number(item.row[valueKey]))} r="4.5" fill={COLORS[index % COLORS.length]} className="chart-hover-point" />)}
+            {hoveredSeries.map((item, index) => item.point?.row && <circle key={item.name} cx={xForRow(item.point.row, item.point.index)} cy={y(Number(item.point.row[valueKey]))} r="4.5" fill={COLORS[index % COLORS.length]} className="chart-hover-point" />)}
             <ChartTooltip
               x={hoveredX}
               y={hoveredY}
               width={190}
               height={35 + hoveredSeries.length * 15}
-              title={formatTooltipDate(hovered.row.date)}
-              rows={hoveredSeries.filter((item) => item.row).map((item) => ({ label: item.name, value: `${formatNumber(item.row[valueKey])}${suffix}` }))}
+              title={formatTooltipDate(hovered.point.row.date)}
+              rows={hoveredSeries.filter((item) => item.point?.row).map((item) => ({ label: item.name, value: `${formatNumber(item.point.row[valueKey])}${suffix}` }))}
               chartWidth={width}
               chartHeight={height}
             />
@@ -863,13 +874,37 @@ function PortfolioTestingView({ indexes, filters }) {
     setLoading(true)
     setError('')
     setResult(null)
-    api.testPortfolio(
+    const componentNames = components.map(({ index }) => index)
+    const portfolioRequest = api.testPortfolio(
       components.map(({ index, weight }) => ({ index, weight: Number(weight) })),
       rebalancing,
       correlationInterval,
       filters,
     )
-      .then(setResult)
+
+    portfolioRequest
+      .then((portfolio) => {
+        const portfolioRows = portfolio.rentability?.rentability || []
+        const portfolioFilters = {
+          startDate: portfolioRows[0]?.date?.slice(0, 10) || filters.startDate,
+          endDate: portfolioRows[portfolioRows.length - 1]?.date?.slice(0, 10) || filters.endDate,
+        }
+        return Promise.all([
+          portfolio,
+          Promise.all(componentNames.map((name) => Promise.all([
+            api.getRentability(name, portfolioFilters),
+            api.getDrawdown(name, portfolioFilters),
+          ]))),
+        ])
+      })
+      .then(([portfolio, componentResults]) => setResult({
+        ...portfolio,
+        componentSeries: componentNames.map((name, index) => ({
+          name,
+          rentability: componentResults[index][0].rentability || [],
+          drawdown: componentResults[index][1].drawdown || [],
+        })),
+      }))
       .catch((reason) => setError(reason.message))
       .finally(() => setLoading(false))
   }
@@ -877,6 +912,14 @@ function PortfolioTestingView({ indexes, filters }) {
   const drawdownRows = result?.drawdown?.drawdown || []
   const maxDrawdown = drawdownRows.length ? Math.min(...drawdownRows.map((row) => Number(row.drawdown)).filter(Number.isFinite)) : null
   const riskRows = result?.risk_return?.results_df || []
+  const returnSeries = result ? [
+    { name: 'Portfolio', data: result.rentability?.rentability || [] },
+    ...(result.componentSeries || []).map((series) => ({ name: series.name, data: series.rentability })),
+  ] : []
+  const drawdownSeries = result ? [
+    { name: 'Portfolio', data: drawdownRows },
+    ...(result.componentSeries || []).map((series) => ({ name: series.name, data: series.drawdown })),
+  ] : []
   const rebalanceLabels = {
     buy_and_hold: 'Buy & hold',
     daily: 'Daily rebalancing',
@@ -931,7 +974,7 @@ function PortfolioTestingView({ indexes, filters }) {
         <span className="control-note">Used when the test is run</span>
       </div>
       <ErrorBanner message={error} />
-      {loading && <LoadingState label="Simulating portfolio and calculating metrics" />}
+      {loading && <LoadingState label="Simulating portfolio and loading component series" />}
       {!loading && result && (
         <>
           <div className="metric-grid">
@@ -941,11 +984,11 @@ function PortfolioTestingView({ indexes, filters }) {
             <MetricCard label="Maximum drawdown" value={`${formatNumber(maxDrawdown)}%`} detail="Peak to trough" accent="pink" />
           </div>
           <div className="overview-grid portfolio-chart-grid">
-            <Panel title="Portfolio performance" eyebrow={`${rebalanceLabels[result.rebalancing]} · normalized return`}>
-              <LineChart rows={result.rentability?.rentability} valueKey="rentability" />
+            <Panel title="Portfolio and component returns" eyebrow={`${rebalanceLabels[result.rebalancing]} · normalized return`}>
+              <MultiLineChart series={returnSeries} valueKey="rentability" />
             </Panel>
-            <Panel title="Drawdown profile" eyebrow="Distance from running peak">
-              <LineChart rows={drawdownRows} valueKey="drawdown" color="#ef7b9a" />
+            <Panel title="Portfolio and component drawdowns" eyebrow="Distance from each running peak">
+              <MultiLineChart series={drawdownSeries} valueKey="drawdown" suffix="%" />
             </Panel>
           </div>
           <div className="comparison-grid portfolio-results-grid">
