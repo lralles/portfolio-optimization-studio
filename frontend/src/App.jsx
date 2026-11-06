@@ -172,8 +172,8 @@ function LineChart({ rows, valueKey, color = '#56d8be', suffix = '%' }) {
   }
 
   return (
-    <div className="chart-wrap">
-      <svg className="line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Performance chart" onMouseMove={updateHover} onMouseLeave={() => setHoveredIndex(null)}>
+    <div className="chart-wrap" onMouseLeave={() => setHoveredIndex(null)}>
+      <svg className="line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Performance chart" onMouseMove={updateHover}>
         <defs>
           <linearGradient id={`area-${valueKey}`} x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity=".24" />
@@ -259,8 +259,8 @@ function MultiLineChart({ series, valueKey = 'rentability', suffix = '%' }) {
   }
 
   return (
-    <div className="chart-wrap">
-      <svg className="line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Index comparison chart" onMouseMove={updateHover} onMouseLeave={() => setHoveredIndex(null)}>
+    <div className="chart-wrap" onMouseLeave={() => setHoveredDate(null)}>
+      <svg className="line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Index comparison chart" onMouseMove={updateHover}>
         {ticks.map((tick, index) => (
           <g key={index}>
             <line x1={padding.left} x2={width - padding.right} y1={y(tick)} y2={y(tick)} className="chart-grid" />
@@ -326,8 +326,8 @@ function ScatterPlot({ rows }) {
   const yTicks = [...new Set([minY, 0, maxY])]
 
   return (
-    <div className="chart-wrap">
-      <svg className="scatter-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Risk return scatter plot" onMouseLeave={() => setHoveredIndex(null)}>
+    <div className="chart-wrap" onMouseLeave={() => setHoveredIndex(null)}>
+      <svg className="scatter-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Risk return scatter plot">
         {yTicks.map((tick) => (
           <g key={`y-${tick}`}>
             <line x1={padding.left} x2={width - padding.right} y1={y(tick)} y2={y(tick)} className={tick === 0 ? 'chart-zero-line' : 'chart-grid'} />
